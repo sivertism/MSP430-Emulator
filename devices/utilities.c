@@ -43,7 +43,7 @@ void load_firmware(Emulator *emu, char *file_name, uint16_t virt_addr)
   sprintf(str, "Loading firmware: ( %s )\n", file_name);
   
   printf("%s", str);
-  print_console(emu, str);
+//  print_console(emu, str);
 
   FILE *fd = fopen(file_name, "rb+");
   
@@ -63,7 +63,7 @@ void load_firmware(Emulator *emu, char *file_name, uint16_t virt_addr)
 
   sprintf(str, "Placed %d bytes into flash\n\n", result);
   printf("%s", str);
-  print_console(emu, str);
+//  print_console(emu, str);
 
   fclose(fd);
 }
@@ -334,7 +334,7 @@ void display_help(Emulator *emu)
 	  "**************************************************\n");
 
   if (deb->web_interface) {
-    print_console(emu, help_str);
+    //print_console(emu, help_str);
   }
   else {
     printf("%s", help_str);

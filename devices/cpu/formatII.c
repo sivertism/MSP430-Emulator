@@ -1,4 +1,4 @@
-/*                                                                             
+/*
   MSP430 Emulator                                                              
   Copyright (C) 2014, 2015 Rudolf Geosits (rgeosits@live.esu.edu)              
                                                                                
@@ -346,7 +346,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
   } //# end if
   
 
-  else {    
+  else {
     switch (opcode) {
     case 0x0: {
       bw_flag == WORD ?
@@ -412,17 +412,17 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
       }
 
       printf("%s", hex_str);
-      print_console(emu, hex_str);
+      //print_console(emu, hex_str);
 
       for (i = strlen(hex_str);i < 12;i++) {
 	printf(" ");
-	print_console(emu, " ");
+    //print_console(emu, " ");
       }
 
       printf("\t%s", mnemonic);
 
-      print_console(emu, "\t");
-      print_console(emu, mnemonic);
+      //print_console(emu, "\t");
+      //print_console(emu, mnemonic);
     }
 
   } //# end else

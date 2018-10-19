@@ -122,36 +122,36 @@ void handle_timer_a (Emulator *emu)
 	    //print_console(emu, "0 degrres\n");
 	    
 	    uint8_t byte = 0;
-	    send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
+        //send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
 	  }
 	  else if (pulse_width < 0.0012) {
 	    // Send Control for 30 Degrees
 	    //print_console(emu, "30 degrres\n");
 	    
 	    uint8_t byte = 30;
-	    send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
+        //send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
 	  }
 	  else if (pulse_width < 0.0015) {
 	    // Send Control for 60 degrees
 	    uint8_t byte = 60;
-	    send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
+        //send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
 	  }
 	  else if (pulse_width < 0.0018) {
 	    // Send Control for 90 degrees
 	    //print_console(emu, "90 degrres\n");
 	    
 	    uint8_t byte = 90;
-	    send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
+        //send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
 	  }
 	  else if (pulse_width < 0.0021) {
 	    // Send Control for 120 degrees
 	    uint8_t byte = 120;
-	    send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
+        //send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
 	  }
 	  else if (pulse_width >= 0.0021) {
 	    // Send Control for 150 degrees
 	    uint8_t byte = 150;
-	    send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
+        //send_control(emu, SERVO_MOTOR, (void *)&byte, 1);
 	  }
 	}
       }
