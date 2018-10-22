@@ -35,7 +35,7 @@ void load_bootloader(uint16_t virt_addr)
  * @param file_name The file name of the binary to load into virtual memory
  * @param virt_loc The location in virtual memory to load the firmware
  */
-void load_firmware(Emulator *emu, char *file_name, uint16_t virt_addr)
+void load_firmware(char *file_name, uint16_t virt_addr)
 {
   uint32_t size, result;
   char str[100] = {0};
@@ -43,7 +43,6 @@ void load_firmware(Emulator *emu, char *file_name, uint16_t virt_addr)
   sprintf(str, "Loading firmware: ( %s )\n", file_name);
   
   printf("%s", str);
-//  print_console(emu, str);
 
   FILE *fd = fopen(file_name, "rb+");
   

@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   load_bootloader(0x0C00);
 
   if (deb->web_interface)
-    load_firmware(emu, "tmp.bin", 0xC000);
+    load_firmware("tmp.bin", 0xC000);
   
   // display first round of registers
   display_registers(emu);
