@@ -24,8 +24,10 @@ uint16_t fetch(Emulator *emu)
   Cpu *cpu = emu->cpu;
   uint16_t word, *p;
   
-  p = (get_addr_ptr(cpu->pc));
-  word = *p;
+//  p = (get_addr_ptr(cpu->pc));
+//  word = *p;
+
+  word = read_memory_cb(cpu->pc);
 
   cpu->pc += 2;
   

@@ -41,50 +41,50 @@ bool exec_cmd (Emulator *emu, char *line, int len)
      Puts the starting address back into Program Counter
    */
   if ( !strncasecmp("reset", cmd, sizeof "reset") ||
-       !strncasecmp("restart", cmd, sizeof "restart")) 
-    {      
+       !strncasecmp("restart", cmd, sizeof "restart"))
+    {
       cpu->pc = 0xC000;
 
       display_registers(emu);
       disassemble(emu, cpu->pc, 1);
     }
   
-  // s [NUM], step NUM instructions forward, defaults to 1 // 
+  // s [NUM], step NUM instructions forward, defaults to 1 //
   else if ( !strncasecmp("s", cmd, sizeof "s") ||
-	    !strncasecmp("step", cmd, sizeof "step")) 
+        !strncasecmp("step", cmd, sizeof "step"))
     {
       int steps = 1; // 1 step by default
       uint32_t i;
 
       if (ops == 2) {
-	steps = (int) op1;
+    steps = (int) op1;
       }
 
       for (i = 0;i < steps;i++) {
-	decode(emu, fetch(emu), EXECUTE);
+    decode(emu, fetch(emu), EXECUTE);
 
-        // Handle Peripherals     
-	handle_bcm(emu);
-	handle_timer_a(emu);
-	handle_port_1(emu);
-	handle_usci(emu); 
+        // Handle Peripherals
+    handle_bcm(emu);
+    handle_timer_a(emu);
+    handle_port_1(emu);
+    handle_usci(emu);
       }
 
       display_registers(emu);
       disassemble(emu, cpu->pc, 1);
-  }                                
+  }
   
   // Quit program //
   else if ( !strncasecmp("quit", cmd, sizeof "quit") ||
-	    !strncasecmp("q", cmd, sizeof "q")) 
-    {    
+        !strncasecmp("q", cmd, sizeof "q"))
+    {
       // This flag stops the main loop in main.c
       deb->quit = true;
     }
   
   // run the program until a breakpoint is hit //
   else if ( !strncasecmp("run", cmd, sizeof "run") ||
-	    !strncasecmp("r", cmd, sizeof "r")) 
+        !strncasecmp("r", cmd, sizeof "r"))
     {
       cpu->running = true;
       deb->debug_mode = false;
@@ -94,26 +94,26 @@ bool exec_cmd (Emulator *emu, char *line, int len)
 
   // Display disassembly of N at HEX_ADDR: dis [N] [HEX_ADDR] //
   else if ( !strncasecmp("disas", cmd, sizeof "disas") ||
-	    !strncasecmp("dis", cmd, sizeof "dis") ||
-	    !strncasecmp("disassemble", cmd, sizeof "disassemble")) 
+        !strncasecmp("dis", cmd, sizeof "dis") ||
+        !strncasecmp("disassemble", cmd, sizeof "disassemble"))
     {
       uint16_t start_addr = cpu->pc;
-      uint32_t num = 10; 
+      uint32_t num = 10;
       
       ops = sscanf(line, "%s %u %X", bogus1, &bogus2, &bogus3);
       
       if (ops == 2) {
-	sscanf(line, "%s %u", bogus1, &num);
+    sscanf(line, "%s %u", bogus1, &num);
       }
       else if (ops == 3) {
-	sscanf(line, "%s %u %X", bogus1, &num, 
-		     (unsigned int *)&start_addr);
+    sscanf(line, "%s %u %X", bogus1, &num,
+             (unsigned int *)&start_addr);
       }
       
       disassemble(emu, start_addr, num);
     }
 
-  else if ( !strncasecmp("dump", cmd, sizeof "dump" )) 
+  else if ( !strncasecmp("dump", cmd, sizeof "dump" ))
     {
       char str[100] = {0};
       uint16_t start_addr = cpu->pc;
@@ -121,21 +121,21 @@ bool exec_cmd (Emulator *emu, char *line, int len)
       
       sscanf(line, "%s %s", bogus1, str);
       
-      // Is it a direct address or an adress in a register being spec'd 
+      // Is it a direct address or an adress in a register being spec'd
       if (str[0] >= '0' && str[0] <= '9') {
-	sscanf(str, "%X", (unsigned int *) &start_addr);
+    sscanf(str, "%X", (unsigned int *) &start_addr);
       }
       else if (str[0] == '%' || str[0] == 'r' || str[0] == 'R'){
-	uint16_t *p = get_reg_ptr(emu, reg_name_to_num(str));
-	start_addr = *p;
+    uint16_t *p = get_reg_ptr(emu, reg_name_to_num(str));
+    start_addr = *p;
       }
       
       stride = BYTE_STRIDE;
-      dump_memory(emu, MEMSPACE, 0x0, start_addr, stride);	
+//      dump_memory(emu, MEMSPACE, 0x0, start_addr, stride);
     }
 
-  // Set REG/LOC VALUE 
-  else if ( !strncasecmp("set", cmd, sizeof "set") ) 
+  // Set REG/LOC VALUE
+  else if ( !strncasecmp("set", cmd, sizeof "set") )
     {
       uint16_t value = 0;
       char reg_name_or_addr[50] = {0};
@@ -144,8 +144,8 @@ bool exec_cmd (Emulator *emu, char *line, int len)
 
       //print_console(emu, "Not yet implemented.\n");
       
-      sscanf(line, "%s %s %X", bogus1, reg_name_or_addr, 
-	     (unsigned int*)&value);
+      sscanf(line, "%s %s %X", bogus1, reg_name_or_addr,
+         (unsigned int*)&value);
       
       //printf("Got %s and %X\n", reg_name_or_addr, value);
 
@@ -153,86 +153,86 @@ bool exec_cmd (Emulator *emu, char *line, int len)
       int res = reg_name_to_num(reg_name_or_addr);
 
       if (res != -1) {  // If its a reg name
-	reg_name = reg_name_or_addr;
-	printf("In reg part...\n");
+    reg_name = reg_name_or_addr;
+    printf("In reg part...\n");
 	
-	if (res == 2) { // SR (R2)
-	  set_sr_value(emu, value);
-	}
-	else { // All others
-	  uint16_t *p = get_reg_ptr(emu, res);
-	  *p = value;
-	}
+    if (res == 2) { // SR (R2)
+      set_sr_value(emu, value);
+    }
+    else { // All others
+      uint16_t *p = get_reg_ptr(emu, res);
+      *p = value;
+    }
 
-	display_registers(emu);
-	disassemble(emu, cpu->pc, 1);
+    display_registers(emu);
+    disassemble(emu, cpu->pc, 1);
       }
       else {
-	addr_str = reg_name_or_addr;
-	printf("In addr part...\n");
+    addr_str = reg_name_or_addr;
+    printf("In addr part...\n");
 
-	uint16_t virtual_addr = (uint16_t) strtol(addr_str, NULL, 0);
+    uint16_t virtual_addr = (uint16_t) strtol(addr_str, NULL, 0);
 
-	uint16_t *p = get_addr_ptr(virtual_addr);
-	*p = value;
+    uint16_t *p = get_addr_ptr(virtual_addr);
+    *p = value;
       }
     }
 
   // break BREAKPOINT_ADDRESS - set breakpoint //
-  else if ( !strncasecmp("break", cmd, sizeof "break") ) 
+  else if ( !strncasecmp("break", cmd, sizeof "break") )
     {
       if (deb->num_bps >= MAX_BREAKPOINTS) {
     printf("Breakpoints are full.\n");
     //print_console(emu, "Breakpoints are full.\n");
 
-	return true;
+    return true;
       }
     
       ops = sscanf(line, "%s %X", bogus1, &bogus2);
       char entry[100] = {0};
 
       if (ops == 2) {
-	sscanf(line, "%s %X", bogus1, (unsigned int *) 
-	       &deb->bp_addresses[deb->num_bps]);
+    sscanf(line, "%s %X", bogus1, (unsigned int *)
+           &deb->bp_addresses[deb->num_bps]);
       
-	sprintf(entry, "\n\t[Breakpoint [%d] Set]\n", deb->num_bps + 1);
-	//printf("%s", entry);
+    sprintf(entry, "\n\t[Breakpoint [%d] Set]\n", deb->num_bps + 1);
+    //printf("%s", entry);
     //print_console(emu, entry);
 
-	++deb->num_bps;
+    ++deb->num_bps;
       }
       else {
-	//printf("error\n");
+    //printf("error\n");
     //print_console(emu, "error\n");
       }
     }
 
   // Display all breakpoints //
-  else if ( !strncasecmp("bps", cmd, sizeof "bps" )) 
+  else if ( !strncasecmp("bps", cmd, sizeof "bps" ))
     {
       char entry[100] = {0};
 
       if (deb->num_bps > 0) {
-	deb->current_bp = 0;
+    deb->current_bp = 0;
 
-	while (deb->current_bp < deb->num_bps) {
-	  sprintf(entry, "\t[%d] 0x%04X\n", 
-		  deb->current_bp+1, deb->bp_addresses[deb->current_bp]);
+    while (deb->current_bp < deb->num_bps) {
+      sprintf(entry, "\t[%d] 0x%04X\n",
+          deb->current_bp+1, deb->bp_addresses[deb->current_bp]);
 
-	  //printf("%s", entry);
+      //printf("%s", entry);
       //print_console(emu, entry);
 
-	  ++deb->current_bp;
-	}
+      ++deb->current_bp;
+    }
       }
       else {
-	//printf("You have not set any breakpoints!\n");
+    //printf("You have not set any breakpoints!\n");
     //print_console(emu, "You have not set any breakpoints!\n");
       }
     }
 
   // Display registers //
-  else if ( !strncasecmp("regs", cmd, sizeof "regs")) 
+  else if ( !strncasecmp("regs", cmd, sizeof "regs"))
     {
       display_registers(emu);
       disassemble(emu, cpu->pc, 1);
@@ -240,13 +240,13 @@ bool exec_cmd (Emulator *emu, char *line, int len)
 
   // help, display a list of debugger cmds //
   else if ( !strncasecmp("help", cmd, sizeof "help") ||
-	    !strncasecmp("h", cmd, sizeof "h") ) 
+        !strncasecmp("h", cmd, sizeof "h") )
     {
       display_help(emu);
     }
 
   // End the line loop, next instruction
-  else 
+  else
     {
       //print_console(emu, "\t[Invalid command, type \"help\".]\n");
     }
