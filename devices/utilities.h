@@ -35,11 +35,10 @@ void load_bootloader(uint16_t virt_addr);
 void load_firmware(char *file_name, uint16_t virt_addr);
 void display_help(Emulator *emu);
 void set_base_address(uint16_t * addr);
-void set_write_memory_cb(void (*functionPtr)(uint16_t,uint16_t));
-void set_read_memory_cb(uint16_t (*functionPtr)(uint16_t));
+void set_write_memory_cb(void (*functionPtr)(uint16_t,uint16_t,uint8_t));
+void set_read_memory_cb(uint16_t (*functionPtr)(uint16_t,uint8_t));
 
-
-extern void (*write_memory_cb)(uint16_t,uint16_t);
-extern uint16_t (*read_memory_cb)(uint16_t);
+extern void (*write_memory_cb)(uint16_t,uint16_t,uint8_t);
+extern uint16_t (*read_memory_cb)(uint16_t,uint8_t);
 
 #endif

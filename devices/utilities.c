@@ -19,8 +19,8 @@ along with this program. If not, see <http://www.gnu.org/licenses
 
 uint16_t * host_base;
 
-void (*write_memory_cb)(uint16_t,uint16_t);
-uint16_t (*read_memory_cb)(uint16_t);
+void (*write_memory_cb)(uint16_t,uint16_t,uint8_t);
+uint16_t (*read_memory_cb)(uint16_t,uint8_t);
 
 /**
  * @brief set_base_addresss: Sets the host memory base address
@@ -30,11 +30,11 @@ void set_base_address(uint16_t * addr){
     host_base = addr;
 }
 
-void set_write_memory_cb(void (*functionPtr)(uint16_t,uint16_t)){
+void set_write_memory_cb(void (*functionPtr)(uint16_t,uint16_t,uint8_t)){
     write_memory_cb = functionPtr;
 }
 
-void set_read_memory_cb(uint16_t (*functionPtr)(uint16_t)){
+void set_read_memory_cb(uint16_t (*functionPtr)(uint16_t,uint8_t)){
     read_memory_cb = functionPtr;
 }
 
