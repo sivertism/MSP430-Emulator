@@ -189,7 +189,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
   }
 
 
-  if (!disassemble) {
+  if (!disassemble) { // EXECUTE
     switch (opcode) {
         
       /*  RRC Rotate right through carry
