@@ -540,7 +540,11 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
             } else {
-                *((uint8_t *) destination_addr) = (uint8_t) result;
+                if (bw_flag==WORD){
+                    *destination_addr = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) destination_addr) = (uint8_t) result;
+                }
             }
 
             break;
@@ -578,7 +582,11 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
             } else {
-                *((uint8_t *) destination_addr) = (uint8_t) result;
+                if (bw_flag==WORD){
+                    *destination_addr = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) destination_addr) = (uint8_t) result;
+                }
             }
 
             cpu->sr.zero = result==0;
@@ -623,7 +631,11 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
             } else {
-                *((uint8_t *) destination_addr) = (uint8_t) result;
+                if (bw_flag==WORD){
+                    *destination_addr = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) destination_addr) = (uint8_t) result;
+                }
             }
 
             cpu->sr.zero = result==0;
@@ -672,7 +684,11 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
             } else {
-                *((uint8_t *) destination_addr) = (uint8_t) result;
+                if (bw_flag==WORD){
+                    *destination_addr = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) destination_addr) = (uint8_t) result;
+                }
             }
 
             cpu->sr.zero = result==0;
@@ -722,7 +738,11 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
             } else {
-                *((uint8_t *) destination_addr) = (uint8_t) result;
+                if (bw_flag==WORD){
+                    *destination_addr = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) destination_addr) = (uint8_t) result;
+                }
             }
 
             cpu->sr.zero = result==0;
@@ -854,7 +874,11 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
             } else {
-                *((uint8_t *) destination_addr) = (uint8_t) result;
+                if (bw_flag==WORD){
+                    *destination_addr = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) destination_addr) = (uint8_t) result;
+                }
             }
 
             break;
@@ -877,7 +901,11 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
             } else {
-                *((uint8_t *) destination_addr) = (uint8_t) result;
+                if (bw_flag==WORD){
+                    *destination_addr = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) destination_addr) = (uint8_t) result;
+                }
             }
 
             break;
@@ -920,7 +948,11 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
             } else {
-                *((uint8_t *) destination_addr) = (uint8_t) result;
+                if (bw_flag==WORD){
+                    *destination_addr = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) destination_addr) = (uint8_t) result;
+                }
             }
 
             break;
@@ -958,7 +990,11 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
             } else {
-                *((uint8_t *) destination_addr) = (uint8_t) result;
+                if (bw_flag==WORD){
+                    *destination_addr = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) destination_addr) = (uint8_t) result;
+                }
             }
 
             break;

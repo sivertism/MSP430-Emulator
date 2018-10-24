@@ -262,7 +262,11 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
                 write_memory_cb(source_vaddress, result,
                                 bw_flag==BYTE ? BYTE : WORD);
             } else {                // Write result to register
-                *source_address = result;
+                if (bw_flag==WORD){
+                    *source_address = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) source_address) = (uint8_t) result;
+                }
             }
 
             cpu->sr.zero = source_value==0;
@@ -291,7 +295,11 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             if (is_saddr_virtual){  // Write result to memory
                 write_memory_cb(source_vaddress, result, WORD);
             } else {                // Write result to register
-                *source_address = result;
+                if (bw_flag==WORD){
+                    *source_address = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) source_address) = (uint8_t) result;
+                }
             }
 
             break;
@@ -331,7 +339,11 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
                 write_memory_cb(source_vaddress, result,
                                 bw_flag==BYTE ? BYTE : WORD);
             } else {                // Write result to register
-                *source_address = result;
+                if (bw_flag==WORD){
+                    *source_address = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) source_address) = (uint8_t) result;
+                }
             }
 
             cpu->sr.zero = result==0;
@@ -366,7 +378,11 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
                 write_memory_cb(source_vaddress, result,
                                 bw_flag==BYTE ? BYTE : WORD);
             } else {                // Write result to register
-                *source_address = result;
+                if (bw_flag==WORD){
+                    *source_address = result;
+                } else if (bw_flag == BYTE){
+                    *((uint8_t *) source_address) = (uint8_t) result;
+                }
             }
             cpu->sr.negative = result<0;
             cpu->sr.zero = result==0;
@@ -396,7 +412,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 //            }
 
             // Write result to memory
-            write_memory_cb(cpu->sp+1 , source_value,
+            write_memory_cb(cpu->sp , source_value,
                             bw_flag==BYTE ? BYTE : WORD);
 
             break;
