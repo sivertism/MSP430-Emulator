@@ -437,7 +437,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
     } //# end if
 
 
-    else {
+//    else {
         switch (opcode) {
         case 0x0: {
             bw_flag == WORD ?
@@ -486,7 +486,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
         strncat(mnemonic, asm_operand, sizeof mnemonic);
         strncat(mnemonic, "\n", sizeof mnemonic);
 
-        if (disassemble && emu->debugger->debug_mode) {
+//        if (disassemble && emu->debugger->debug_mode) {
             int i;
             char one = 0, two = 0;
 
@@ -514,9 +514,9 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 
             //print_console(emu, "\t");
             //print_console(emu, mnemonic);
-        }
+//        }
 
-    } //# end else
+//    } //# end else
 
 }
 

@@ -442,7 +442,7 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 
         is_daddr_virtual = 0;
         destination_addr = d_reg;           /* Destination Register */
-        dest_vaddress = *d_reg;
+        dest_value = *d_reg;
     }
 
     /* Indirect Inc - Indexed;  Ex: MOV @Rs+, 0x0(Rd) */
@@ -971,7 +971,7 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 
 
     // DISASSEMBLY MODE
-    else {
+//    else {
         switch (opcode) {
         case 0x4: {
             bw_flag == WORD ?
@@ -1064,7 +1064,7 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
         strncat(mnemonic, asm_operands, sizeof mnemonic);
         strncat(mnemonic, "\n", sizeof mnemonic);
 
-        if (disassemble && emu->debugger->debug_mode) {
+//        if (disassemble && emu->debugger->debug_mode) {
             int i;
             char one = 0, two = 0;
 
@@ -1092,7 +1092,7 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 
             //print_console(emu, "\t");
             //print_console(emu, mnemonic);
-        }
+//        }
 
-    }
+//    }
 };

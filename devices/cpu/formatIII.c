@@ -159,7 +159,7 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
     } //# end if
 
 
-    else { // disassemle
+//    else { // disassemle
         switch(condition){
 
         case 0x0:{
@@ -215,7 +215,7 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
         strncat(mnemonic, value, sizeof(mnemonic));
         strncat(mnemonic, "\n", sizeof(mnemonic));
 
-        if (disassemble && emu->debugger->debug_mode) {
+//        if (disassemble && emu->debugger->debug_mode) {
             int i;
             char one = 0, two = 0;
 
@@ -243,7 +243,7 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
 
             //print_console(emu, "\t");
             //print_console(emu, mnemonic);
-        }
+//        }
 
-    }
+//    }
 }
