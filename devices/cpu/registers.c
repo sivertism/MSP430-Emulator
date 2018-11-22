@@ -28,10 +28,12 @@ void initialize_msp_registers(Emulator *emu)
   //cpu->pc = 0x0C00;
 
   /* Initialize Program Counter to *0xFFFE at boot or reset (WARM)*/
-  cpu->pc = 0xC000;
+//  cpu->pc = 0xC000;
+  cpu->pc = 0x6284;
   
   /* Stack pointer typically begins at the top of RAM after reset */
-  cpu->sp = 0x400;
+//  cpu->sp = 0x400;
+  cpu->sp = 0x3c00;
 
   /* Initialize the status register */
   memset(&cpu->sr, 0, sizeof(Status_reg));

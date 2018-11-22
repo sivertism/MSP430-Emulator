@@ -507,6 +507,9 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
                     (uint16_t) destination_offset, d_reg_name);
         }
 
+        // Fetch destination value
+        dest_value = read_memory_cb(dest_vaddress, bw_flag ? BYTE : WORD);
+
         is_daddr_virtual = 1;
 
         strncat(asm_operands, asm_op2, sizeof asm_op2);
@@ -796,7 +799,7 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             int16_t tmp_src, tmp_dst;
 
             tmp_src = bw_flag ? (int8_t)source_value : source_value;
-            tmp_dst = bw_flag ? (int8_t)source_value : source_value;
+            tmp_dst = bw_flag ? (int8_t)dest_value : dest_value;
 
             cpu->sr.negative = tmp_src > tmp_dst;
             cpu->sr.zero = tmp_src==tmp_dst;
