@@ -175,7 +175,6 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
             strncat(hex_str, hex_str_part, sizeof hex_str);
-
             sprintf(asm_operands, "0x%04X, %s", virtual_addr, d_reg_name);
         }
         else if (source == 2) {            /* Source Absolute */
@@ -1104,6 +1103,7 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
         strncat(mnemonic, "\n", sizeof mnemonic);
 
 //        if (disassemble && emu->debugger->debug_mode) {
+        if (emu->debugger->debug_mode){ //disassemble && emu->debugger->debug_mode) {
             int i;
             char one = 0, two = 0;
 
@@ -1131,7 +1131,7 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 
             //print_console(emu, "\t");
             //print_console(emu, mnemonic);
-//        }
+        }
 
 //    }
-};
+}

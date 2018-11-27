@@ -33,7 +33,6 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 {
     int is_saddr_virtual=0;   /// Indicate if source source address is virtual
     Cpu *cpu = emu->cpu;
-    Debugger *debugger = emu->debugger;
 
     uint8_t opcode = (instruction & 0x0380) >> 7;
     uint8_t bw_flag = (instruction & 0x0040) >> 6;
@@ -114,22 +113,17 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             source_offset = fetch(emu);
             uint16_t virtual_addr = cpu->pc + source_offset;
 
-            sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
-            strncat(hex_str, hex_str_part, sizeof hex_str);
-
-            //      source_address = get_addr_ptr(virtual_addr);
             is_saddr_virtual = 1;
             source_vaddress = virtual_addr;
             source_value = read_memory_cb(virtual_addr,
                                           bw_flag==BYTE ? BYTE : WORD);
 
+            sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
+            strncat(hex_str, hex_str_part, sizeof hex_str);
             sprintf(asm_operand, "0x%04X", virtual_addr);
         }
         else if (source == 2) {            /* Source Absolute */
             source_offset = fetch(emu);
-            //      source_address = get_addr_ptr(source_offset);
-            //      source_value = *source_address;
-
             is_saddr_virtual = 1;
             source_vaddress = source_offset;
             source_value = read_memory_cb(source_vaddress,
@@ -137,14 +131,10 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_value);
             strncat(hex_str, hex_str_part, sizeof hex_str);
-
             sprintf(asm_operand, "&0x%04X", (uint16_t) source_offset);
         }
         else {                             /* Source Indexed */
             source_offset = fetch(emu);
-            //      source_address = get_addr_ptr(*reg + source_offset);
-            //      source_value = *source_address;
-
             is_saddr_virtual = 1;
             source_vaddress = *reg + source_offset;
             source_value = read_memory_cb(source_vaddress,
@@ -152,7 +142,6 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
             strncat(hex_str, hex_str_part, sizeof hex_str);
-
             sprintf(asm_operand, "0x%04X(%s)", (uint16_t) source_offset, reg_name);
         }
     }
@@ -168,9 +157,6 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             sprintf(asm_operand, "#0x%04X", immediate_constant);
         }
         else {                             /* Source Indirect */
-            //      source_address = get_addr_ptr(*reg);
-            //      source_value = *source_address;
-
             is_saddr_virtual = 1;
             source_vaddress = *reg;
             source_value = read_memory_cb(source_vaddress,
@@ -290,16 +276,12 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             uint16_t upper_nibble, lower_nibble;
             upper_nibble = (source_value & 0xFF00);
             lower_nibble = (source_value & 0x00FF);
-            result = (upper_nibble>>8)|(lower_nibble<<8);
+            result = (lower_nibble<<8) | (upper_nibble>>8);
 
             if (is_saddr_virtual){  // Write result to memory
                 write_memory_cb(source_vaddress, result, WORD);
             } else {                // Write result to register
-                if (bw_flag==WORD){
-                    *source_address = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) source_address) = (uint8_t) result;
-                }
+                *source_address = result;
             }
 
             break;
@@ -372,17 +354,12 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 //            }
 
             result = source_value & (1<<7) ? source_value | 0xFF00 :
-                                              source_value & 0x00FF;
+                                             source_value & 0xFF00;
 
             if (is_saddr_virtual){  // Write result to memory
-                write_memory_cb(source_vaddress, result,
-                                bw_flag==BYTE ? BYTE : WORD);
+                write_memory_cb(source_vaddress, result, WORD);
             } else {                // Write result to register
-                if (bw_flag==WORD){
-                    *source_address = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) source_address) = (uint8_t) result;
-                }
+                *source_address = result;
             }
             cpu->sr.negative = result<0;
             cpu->sr.zero = result==0;
@@ -425,13 +402,8 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
        */
 
         case 0x5:{
-
-            cpu->sp -= 2;
-//            uint16_t *stack_address = get_stack_ptr(emu);
-//            *stack_address = cpu->pc;
-//            cpu->pc = *source_address;
-
             // Push PC
+            cpu->sp -= 2;
             write_memory_cb(cpu->sp, cpu->pc, WORD);
 
             // Jump
@@ -442,7 +414,8 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 
             //# RETI Return from interrupt: Pop SR then pop PC
         case 0x6:{
-
+            printf("RETI: NOT IMPLEMENTED");
+            exit(1);
             break;
         }
         default:{
@@ -502,7 +475,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
         strncat(mnemonic, asm_operand, sizeof mnemonic);
         strncat(mnemonic, "\n", sizeof mnemonic);
 
-//        if (disassemble && emu->debugger->debug_mode) {
+        if (emu->debugger->debug_mode){//disassemble && emu->debugger->debug_mode) {
             int i;
             char one = 0, two = 0;
 
@@ -530,7 +503,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 
             //print_console(emu, "\t");
             //print_console(emu, mnemonic);
-//        }
+        }
 
 //    } //# end else
 

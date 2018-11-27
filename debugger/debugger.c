@@ -540,15 +540,15 @@ void handle_breakpoints (Emulator *emu)
   for (i = 0;i < deb->num_bps;i++) {
 
     if (cpu->pc == deb->bp_addresses[i]) {
-      cpu->running = false;
-      deb->debug_mode = true;
+//      cpu->running = false;
+//      deb->debug_mode = true;
       
       sprintf(str, "\n\t[Breakpoint %d hit]\n\n", i + 1);
       printf("%s", str);
       //print_console(emu, str);
       
-      display_registers(emu);
-      disassemble(emu, cpu->pc, 1);
+//      display_registers(emu);
+//      disassemble(emu, cpu->pc, 1);
       
       return;
     }
