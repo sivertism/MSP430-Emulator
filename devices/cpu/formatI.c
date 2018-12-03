@@ -795,19 +795,28 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 //                result = *(uint8_t *)destination_addr + (uint8_t)unsigned_source_value;
 //            }
 
-            int16_t tmp_src, tmp_dst;
+            int16_t tmp_src, tmp_dst, result;
 
             tmp_src = bw_flag ? (int8_t)source_value : source_value;
             tmp_dst = bw_flag ? (int8_t)dest_value : dest_value;
 
-            cpu->sr.negative = tmp_src > tmp_dst;
-            cpu->sr.zero = tmp_src==tmp_dst;
-            cpu->sr.carry = false;
+            result = tmp_src - tmp_dst;
+
+            cpu->sr.negative = result<0;
+            cpu->sr.zero = result==0;
+
+            if(bw_flag == WORD){
+                unsigned tmp = ((uint16_t)~source_value) + 1 + dest_value;
+                cpu->sr.carry = (tmp > 0xffff);
+            } else if (bw_flag == BYTE){
+                unsigned tmp = ((uint8_t)~source_value)+1+(uint8_t)dest_value;
+                cpu->sr.carry = (tmp > 0xff);
+            }
 
             if (tmp_src < 0 && tmp_dst > 0){
-                cpu->sr.overflow = (tmp_dst-tmp_src) < 0;
+                cpu->sr.overflow = result < 0;
             } else if (tmp_src > 0 && tmp_dst < 0){
-                cpu->sr.overflow = (tmp_dst-tmp_src) > 0;
+                cpu->sr.overflow = result > 0;
             }
 
             break;
