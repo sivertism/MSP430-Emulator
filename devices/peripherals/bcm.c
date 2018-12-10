@@ -58,43 +58,6 @@ void handle_bcm (Emulator *emu)
   // HANDLE ACLK -------------------
   uint8_t DIVAx = (BCSCTL1 >> 4) & 0x03;
   
-
-  // HANDLE LOW POWER MODES --------
-
-  // Active Mode (CPU is active, all enabled clocks are active)
-  if (!cpu->sr.SCG1 && !cpu->sr.SCG0 && !cpu->sr.OSCOFF && !cpu->sr.CPUOFF) {
-
-  }
-
-  // LPM0 (CPU, MCLK are disabled, SMCLK, ACLK are active)
-  else if (!cpu->sr.SCG1 && !cpu->sr.SCG0 && !cpu->sr.OSCOFF && cpu->sr.CPUOFF){
-
-  }
-
-  /* LPM1 (CPU, MCLK are disabled. DCO and DC generator are
-     disabled if the DCO is not used for SMCLK. ACLK is
-     active.)
-  */
-  else if (!cpu->sr.SCG1 && cpu->sr.SCG0 && !cpu->sr.OSCOFF && cpu->sr.CPUOFF){
-
-  }
-
-  /* LPM2 (CPU, MCLK, SMCLK, DCO are disabled. DC generator remains enabled. 
-     ACLK is active.) */
-  else if (cpu->sr.SCG1 && !cpu->sr.SCG0 && !cpu->sr.OSCOFF && cpu->sr.CPUOFF){
-
-  }
-
-  // LPM3 (CPU, MCLK, SMCLK, DCO are disabled. DC generatordisabled.ACLK active.
-  else if (cpu->sr.SCG1 && cpu->sr.SCG0 && !cpu->sr.OSCOFF && cpu->sr.CPUOFF){
-
-  }
-
-  // LPM4 (CPU and all clocks are disabled)
-  else if (cpu->sr.SCG1 && cpu->sr.SCG0 && cpu->sr.OSCOFF && cpu->sr.CPUOFF){
-    
-  }
-
   // HANDLE DCO --------------------
 
   uint8_t DCOx   = DCOCTL >> 5;

@@ -20,6 +20,7 @@
 #define _FLAG_HANDLER_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include "decoder.h"
 
@@ -32,5 +33,6 @@ uint8_t is_zero (uint16_t *result_addr, uint8_t bw_flag);
 
 uint8_t is_carried (uint32_t original_dst_value, uint32_t source_value,
                     uint8_t bw_flag);
+
 
 #endif

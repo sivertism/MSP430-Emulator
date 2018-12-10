@@ -56,10 +56,9 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
           * If Z = 1: execute following instruction
           */
         case 0x0:{
-            if (cpu->sr.zero == false) {
+            if (get_zero_flag(cpu) == false) {
                 cpu->pc += signed_offset;
             }
-
             break;
         }
 
@@ -68,10 +67,9 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
    * If Z = 0: execute following instruction
   */
         case 0x1:{
-            if (cpu->sr.zero == true) {
+            if (get_zero_flag(cpu) == true) {
                 cpu->pc += signed_offset;
             }
-
             break;
         }
 
@@ -81,10 +79,9 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
   *  if C = 1: execute following instruction
   */
         case 0x2:{
-            if (cpu->sr.carry == false) {
+            if (get_carry(cpu) == false) {
                 cpu->pc += signed_offset;
             }
-
             break;
         }
 
@@ -94,10 +91,9 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
   * If C = 0: execute following instruction
   */
         case 0x3:{
-            if (cpu->sr.carry == true) {
+            if (get_carry(cpu) == true) {
                 cpu->pc += signed_offset;
             }
-
             break;
         }
 
@@ -107,7 +103,7 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
   *  if N = 0: execute following instruction
   */
         case 0x4:{
-            if (cpu->sr.negative == true) {
+            if (get_negative_flag(cpu) == true) {
                 cpu->pc += signed_offset;
             }
 
@@ -120,7 +116,7 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
   *  If (N .XOR. V) = 1 then execute the following instruction
   */
         case 0x5:{
-            if ((cpu->sr.negative ^ cpu->sr.overflow) == false) {
+            if ((get_negative_flag(cpu) ^ get_overflow_flag(cpu)) == false) {
                 cpu->pc += signed_offset;
             }
 
@@ -133,7 +129,7 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
   *  If (N .XOR. V) = 0 then execute following instruction
   */
         case 0x6:{
-            if ((cpu->sr.negative ^ cpu->sr.overflow) == true) {
+            if ((get_negative_flag(cpu) ^ get_overflow_flag(cpu)) == true) {
                 cpu->pc += signed_offset;
             }
 

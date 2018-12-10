@@ -224,22 +224,15 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
        * TODO: UNDEFINED BEHAVIOR DURRING CONSTANT MANIPULATION, BROKEN
        */
         case 0x0:{
-            //      bool CF = cpu->sr.carry;
-            uint16_t CF = cpu->sr.carry;
+            uint16_t CF = get_carry(cpu);
+            bool c, z, n, v;
 
             if (bw_flag == WORD) {
-                //	cpu->sr.carry = *source_address & 0x0001;  /* Set CF from LSB */
-                //	*source_address >>= 1;                /* Shift one right */
-                //	CF ? *source_address |= 0x8000 : 0;   /* Set MSB from prev CF */
-
-                cpu->sr.carry = source_value & 0x0001;  /* Set CF from LSB */
+                c = source_value & 0x0001;  /* Set CF from LSB */
                 result = ((~(1u<<15)) & (source_value>>1)) | (CF<<15);
             } else if (bw_flag == BYTE){
-//                cpu->sr.carry = *(uint8_t *) source_address & 0x01;
-//                *(uint8_t *) source_address >>= 1;
-//                CF ? *(uint8_t *) source_address |= 0x80 : 0;;
                 int8_t source_byte = source_value & 0xFF;
-                cpu->sr.carry = source_byte & 1;
+                c = source_byte & 1;
                 source_byte = ((~(1u<<7)) & (source_byte>>1)) | (CF<<7);
                 result = source_byte;
             }
@@ -255,9 +248,10 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
                 }
             }
 
-            cpu->sr.zero = source_value==0;
-            cpu->sr.negative = source_value<0;
-            cpu->sr.overflow = false;
+            z = result==0;
+            n = result<0;
+            v = false;
+            set_sr_flags(cpu, c, z, n, v);
 
             break;
         }
@@ -265,15 +259,11 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
        /* SWPB Swap bytes
         * bw flag always 0 (word)
         * Bits 15 to 8 ↔ bits 7 to 0
+        * No flags affected
         */
         case 0x1:{
-//            uint8_t upper_nibble, lower_nibble;
-//            upper_nibble = (*source_address & 0xFF00) >> 8;
-//            lower_nibble = *source_address & 0x00FF;
-
-//            *source_address = ((uint16_t)0|(lower_nibble << 8)) | upper_nibble;
-
             uint16_t upper_nibble, lower_nibble;
+
             upper_nibble = (source_value & 0xFF00);
             lower_nibble = (source_value & 0x00FF);
             result = (lower_nibble<<8) | (upper_nibble>>8);
@@ -296,19 +286,6 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
        * V: Reset
        */
         case 0x2:{
-//            if (bw_flag == WORD) {
-//                cpu->sr.carry = *source_address & 0x0001;
-//                bool msb = *source_address >> 15;
-//                *source_address >>= 1;
-//                msb ? *source_address |= 0x8000 : 0; /* Extend Sign */
-//            }
-//            else if (bw_flag == BYTE) {
-//                cpu->sr.carry = *source_address & 0x0001;
-//                bool msb = *source_address >> 7;
-//                *source_address >>= 1;
-//                msb ? *source_address |= 0x0080 : 0;
-//            }
-            cpu->sr.carry = source_value & 1;
             if (bw_flag == WORD){
                 result = (source_value & (1<<15)) | // MSB
                         (source_value >> 1);
@@ -328,9 +305,13 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
                 }
             }
 
-            cpu->sr.zero = result==0;
-            cpu->sr.negative = result<0;
-            cpu->sr.overflow = false;
+            bool c, z, n, v;
+            z = result==0;
+            n = result<0;
+            c = source_value & 1;
+            v = false;
+            set_sr_flags(cpu, c, z, n, v);
+
             break;
         }
 
@@ -346,13 +327,6 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
        */
 
         case 0x3:{
-//            if (*source_address & 0x0080) {
-//                *source_address |= 0xFF00;
-//            }
-//            else {
-//                *source_address &= 0x00FF;
-//            }
-
             result = source_value & (1<<7) ? source_value | 0xFF00 :
                                              source_value & 0xFF00;
 
@@ -361,10 +335,13 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             } else {                // Write result to register
                 *source_address = result;
             }
-            cpu->sr.negative = result<0;
-            cpu->sr.zero = result==0;
-            cpu->sr.carry = result!=0;
-            cpu->sr.overflow = false;
+
+            bool c, z, n, v;
+            z = result==0;
+            n = result<0;
+            c = result!=0;
+            v = false;
+            set_sr_flags(cpu, c, z, n, v);
 
             break;
         }
@@ -378,15 +355,6 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
         case 0x4:{
 
             cpu->sp -= 2; /* Yes, even for BYTE Instructions */
-//            uint16_t *stack_address = get_stack_ptr(emu);
-
-//            if (bw_flag == WORD) {
-//                *stack_address = source_value;
-//            }
-//            else if (bw_flag == BYTE) {
-//                *stack_address &= 0xFF00; /* Zero out bottom half for pushed byte */
-//                *stack_address |= (uint8_t) source_value;
-//            }
 
             // Write result to memory
             write_memory_cb(cpu->sp , source_value,
@@ -408,14 +376,18 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 
             // Jump
             cpu->pc = source_value;
-
             break;
         }
 
             //# RETI Return from interrupt: Pop SR then pop PC
         case 0x6:{
-            printf("RETI: NOT IMPLEMENTED");
-            exit(1);
+            // 1 Pop SR from the stack
+            cpu->sr = read_memory_cb(cpu->sp, WORD);
+            cpu->sp += 2;
+
+            // 2 Pop PC from stack
+            cpu->pc = read_memory_cb(cpu->sp, WORD);
+            cpu->sp += 2;
             break;
         }
         default:{

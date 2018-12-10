@@ -26,6 +26,7 @@
 //# S = S_Reg_Name, D = Destination
 //########################################################
 
+#include <stdio.h>
 #include "formatI.h"
 
 void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
@@ -530,13 +531,6 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        */
         case 0x4: {
 
-//            if (bw_flag == WORD) {
-//                *destination_addr = source_value;
-//            }
-//            else if (bw_flag == BYTE) {
-//                *((uint8_t *) destination_addr) = (uint8_t) source_value;
-//            }
-
             result = bw_flag ? source_value & 0xFF : source_value;
 
             if (is_daddr_virtual){
@@ -567,16 +561,6 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        *
        */
         case 0x5:{
-
-//            uint16_t original_dst_value = *destination_addr;
-
-//            if (bw_flag == WORD) {
-//                *destination_addr += source_value;
-//            }
-//            else if (bw_flag == BYTE) {
-//                *((uint8_t *) destination_addr) += (uint8_t) source_value;
-//            }
-
             result = bw_flag ?
                         (uint8_t)((uint8_t)dest_value + (uint8_t)source_value)
                       : dest_value + source_value;
@@ -591,16 +575,20 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
                 }
             }
 
-            cpu->sr.zero = result==0;
-            cpu->sr.negative = result<0;
-
-            cpu->sr.carry = is_carried(dest_value, source_value, bw_flag);
+            bool c, z, n, v;
+            z = result==0;
+            n = result<0;
+            c = is_carried(dest_value, source_value, bw_flag);
 
             if (dest_value>0 && source_value>0){
-                cpu->sr.overflow = result<0;
+                v = result<0;
             } else if (dest_value<0 && source_value<0){
-                cpu->sr.overflow = result>0;
+                v = result>0;
+            } else {
+                v = false;
             }
+
+            set_sr_flags(cpu, c, z, n, v);
 
             break;
         }
@@ -618,17 +606,8 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        */
         case 0x6:{
 
-//            uint16_t original_dst_value = *destination_addr;
-
-//            if (bw_flag == WORD) {
-//                *destination_addr += source_value + cpu->sr.carry;
-//            }
-//            else if (bw_flag == BYTE) {
-//                *((uint8_t *) destination_addr) += (uint8_t) source_value + cpu->sr.carry;
-//            }
-
-            result = bw_flag ? (uint8_t)source_value + cpu->sr.carry :
-                               source_value + cpu->sr.carry;
+            result = bw_flag ? (uint8_t)source_value + get_carry(cpu) :
+                               source_value + get_carry(cpu);
 
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
@@ -640,16 +619,20 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
                 }
             }
 
-            cpu->sr.zero = result==0;
-            cpu->sr.negative = result<0;
-
-            cpu->sr.carry = is_carried(dest_value, source_value, bw_flag);
+            bool c, z, n, v;
+            z = result==0;
+            n = result<0;
+            c = is_carried(dest_value, source_value, bw_flag);
 
             if (dest_value>0 && source_value>0){
-                cpu->sr.overflow = result<0;
+                v = result<0;
             } else if (dest_value<0 && source_value<0){
-                cpu->sr.overflow = result>0;
+                v = result>0;
+            } else {
+                v = false;
             }
+
+            set_sr_flags(cpu, c, z, n, v);
 
             break;
         }
@@ -669,19 +652,13 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        */
         case 0x7:{
 
-//            int16_t original_dst_value = *destination_addr;
-//            source_value = ~source_value; /* 1's comp */
-
-//            if (bw_flag == WORD) {
-//                *(int16_t *)destination_addr += source_value + cpu->sr.carry;
-//            }
-//            else if (bw_flag == BYTE) {
-//                *(int8_t *)destination_addr += (int8_t) source_value + cpu->sr.carry;
-//            }
-
-            result = bw_flag ?
-                        (int8_t)((int8_t)dest_value - ((int8_t)source_value - 1) + cpu->sr.carry)
-                      : dest_value - (source_value-1) + cpu->sr.carry;
+            if (bw_flag==WORD) {
+                result = dest_value - (source_value-1) + get_carry(cpu);
+            } else if (bw_flag == BYTE){
+                result = (int8_t)((int8_t)dest_value
+                                  - ((int8_t)source_value - 1)
+                                  + get_carry(cpu));
+            }
 
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
@@ -693,16 +670,19 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
                 }
             }
 
-            cpu->sr.zero = result==0;
-            cpu->sr.negative = result<0;
-
-            cpu->sr.carry = is_carried(dest_value, source_value, bw_flag);
+            bool c, z, n, v;
+            z = result==0;
+            n = result<0;
+            c = is_carried(dest_value, source_value, bw_flag);
 
             if (source_value < 0 && dest_value > 0){
-                cpu->sr.overflow = result < 0;
+                v = result < 0;
             } else if (source_value > 0 && dest_value < 0){
-                cpu->sr.overflow = result > 0;
+                v = result > 0;
+            } else {
+                v = false;
             }
+            set_sr_flags(cpu, c, z, n, v);
             break;
         }
 
@@ -716,22 +696,9 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        *  C: Set if there is a carry from the MSB of the result, reset otherwise.
        *     Set to 1 if no borrow, reset if borrow.
        *  V: Set if an arithmetic overflow occurs, otherwise reset
-       *  TODO: SUBTRACTION OVERFLOW FLAG ERROR
        */
 
         case 0x8:{
-
-//            int16_t original_dst_value = *destination_addr;
-//            source_value = ~source_value + 1;
-
-//            if (bw_flag == WORD) {
-//                *(uint16_t *)destination_addr += source_value;
-//            }
-//            else if (bw_flag == BYTE) {
-//                *(uint8_t *)destination_addr += (uint8_t) source_value;
-//            }
-
-
 
             result = bw_flag ?
                         (int8_t)((int8_t)dest_value - (int8_t)source_value)
@@ -747,28 +714,22 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
                 }
             }
 
-            cpu->sr.zero = result==0;
-            cpu->sr.negative = result<0;
+            bool c, z, n, v;
+            z = result==0;
+            n = result<0;
 
-            cpu->sr.carry = is_carried(dest_value, source_value, bw_flag);
+            c = is_carried(dest_value, source_value, bw_flag);
 
             if (source_value < 0 && dest_value > 0){
-                cpu->sr.overflow = result < 0;
+                v = result < 0;
             } else if (source_value > 0 && dest_value < 0){
-                cpu->sr.overflow = result > 0;
+                v = result > 0;
+            } else {
+                v = false;
             }
 
-//            cpu->sr.zero = is_zero(destination_addr, bw_flag);
-//            cpu->sr.negative = is_negative(destination_addr, bw_flag);
+            set_sr_flags(cpu, c, z, n, v);
 
-//            if ( is_carried(~source_value, 1, bw_flag) ||
-//                 is_carried(original_dst_value, source_value, bw_flag) ) {
-
-//                cpu->sr.carry = true;
-//            }
-
-//            cpu->sr.overflow = is_overflowed(source_value, original_dst_value,
-//                                             destination_addr, bw_flag);
             break;
         }
 
@@ -782,19 +743,6 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        */
         case 0x9:{
 
-//            int16_t original_dst_value = *destination_addr;
-//            uint16_t unsigned_source_value = ((uint16_t)~source_value + 1);
-//            int16_t result;
-
-//            bool early_carry = is_carried((uint16_t)~source_value, 1, bw_flag);
-
-//            if (bw_flag == WORD) {
-//                result = *destination_addr + (uint16_t) unsigned_source_value;
-//            }
-//            else if (bw_flag == BYTE) {
-//                result = *(uint8_t *)destination_addr + (uint8_t)unsigned_source_value;
-//            }
-
             int16_t tmp_src, tmp_dst, result;
 
             tmp_src = bw_flag ? (int8_t)source_value : source_value;
@@ -802,23 +750,29 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 
             result = tmp_src - tmp_dst;
 
-            cpu->sr.negative = result<0;
-            cpu->sr.zero = result==0;
+            bool c, z, n, v;
+
+            n = result<0;
+            z = result==0;
+
 
             if(bw_flag == WORD){
-                unsigned tmp = ((uint16_t)~source_value) + 1 + dest_value;
-                cpu->sr.carry = (tmp > 0xffff);
+                unsigned tmp = ((uint16_t)~source_value) + 1 +
+                                (uint16_t)dest_value;
+                c = (tmp > 0xffff);
             } else if (bw_flag == BYTE){
                 unsigned tmp = ((uint8_t)~source_value)+1+(uint8_t)dest_value;
-                cpu->sr.carry = (tmp > 0xff);
+                c = (tmp > 0xff);
             }
 
             if (tmp_src < 0 && tmp_dst > 0){
-                cpu->sr.overflow = result < 0;
+                v = result < 0;
             } else if (tmp_src > 0 && tmp_dst < 0){
-                cpu->sr.overflow = result > 0;
+                v = result > 0;
+            } else {
+                v = false;
             }
-
+            set_sr_flags(cpu, c, z, n, v);
             break;
         }
 
@@ -826,7 +780,8 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        *
        */
         case 0xA:{
-
+            fprintf(stderr, "ERROR: DADD INSTRUCTION NOT IMPLEMENTED");
+            exit(1);
             if (bw_flag == WORD) {
 
             }
@@ -847,22 +802,21 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
         case 0xB:{
 
             if (bw_flag == WORD) {
-//                uint16_t result = ((uint16_t) source_value) & (*destination_addr);
                 result = source_value & dest_value;
-                cpu->sr.zero = (result == 0);
-                cpu->sr.negative = result<0;
-                cpu->sr.carry = (result != 0);
+                set_sr_flags(cpu,
+                             result != 0,
+                             result == 0,
+                             (result>>15)>0,
+                             false);
             }
             else if (bw_flag == BYTE) {
-//                uint8_t result =
-//                        ((uint8_t) source_value) & (*(uint8_t *) destination_addr);
                 uint8_t res = (uint8_t) source_value & (uint8_t)dest_value;
-                cpu->sr.zero = (res == 0);
-                cpu->sr.negative = res>>7;
-                cpu->sr.carry = (res != 0);
+                set_sr_flags(cpu,
+                             res != 0,
+                             res == 0,
+                             (res>>7)>0,
+                             false);
             }
-
-            cpu->sr.overflow = false;
 
             break;
         }
@@ -896,16 +850,14 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
         }
 
             /* BIS SOURCE, DESTINATION
-       *
+       * No flags affected
        */
         case 0xD:{
 
             if (bw_flag == WORD) {
-//                *destination_addr |= (uint16_t) source_value;
                 result = dest_value | source_value;
             }
             else if (bw_flag == BYTE) {
-//                *(uint8_t *) destination_addr |= (uint8_t) source_value;
                 result = (dest_value | source_value) & 0x00FF;
             }
 
@@ -932,28 +884,21 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
         case 0xE:{
 
             if (bw_flag == WORD) {
-//                cpu->sr.overflow =
-//                        (*destination_addr >> 15) && ((uint16_t)source_value >> 15);
-
-//                *destination_addr ^= (uint16_t)source_value;
-
-                cpu->sr.overflow = (dest_value<0) && (source_value<0);
                 result = dest_value ^ source_value;
-                cpu->sr.negative = result<0;
-                cpu->sr.zero = result==0;
-                cpu->sr.carry = result!=0;
+                set_sr_flags(cpu,
+                             result != 0,
+                             result == 0,
+                             result < 0,
+                             (dest_value<0) && (source_value<0));
             }
             else if (bw_flag == BYTE) {
-//                cpu->sr.overflow =
-//                        (*(uint8_t *)destination_addr >> 7) && ((uint8_t)source_value >> 7);
-
-//                *(uint8_t *) destination_addr ^= (uint8_t) source_value;
-
                 result = (int8_t)dest_value ^ (int8_t)source_value;
-
-                cpu->sr.negative = ((int8_t)result)<0;
-                cpu->sr.zero = ((int8_t)result)==0;
-                cpu->sr.carry = ((int8_t)result)!=0;
+                set_sr_flags(cpu,
+                             result != 0,
+                             result == 0,
+                             result < 0,
+                             ((int8_t)dest_value<0) &&
+                             ((int8_t)source_value<0));
             }
 
             if (is_daddr_virtual){
@@ -983,20 +928,23 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 
                 result = dest_value & source_value;
 
-                cpu->sr.negative = result < 0;
-                cpu->sr.zero = result == 0;
-                cpu->sr.carry = result != 0;
+                set_sr_flags(cpu,
+                             result != 0,
+                             result == 0,
+                             result < 0,
+                             false);
             }
             else if (bw_flag == BYTE) {
 //                *(uint8_t *) destination_addr &= (uint8_t) source_value;
 
                 result = (int8_t)dest_value & (int8_t)source_value;
 
-                cpu->sr.negative = (int8_t)result < 0;
-                cpu->sr.zero = (int8_t)result == 0;
-                cpu->sr.carry = (int8_t)result != 0;
+                set_sr_flags(cpu,
+                             (int8_t)result != 0,
+                             (int8_t)result == 0,
+                             (int8_t)result < 0,
+                             false);
             }
-            cpu->sr.overflow = false;
 
             if (is_daddr_virtual){
                 write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);

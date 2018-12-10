@@ -105,18 +105,11 @@ uint16_t *get_addr_ptr(uint16_t virt_addr) {
 int16_t *get_reg_ptr(Emulator *emu, uint8_t reg)
 {
   Cpu *cpu = emu->cpu;
-
-  static int16_t r2 = 0;
   
   switch (reg) {  
-    case 0x0: return (int16_t *) &cpu->pc;
-    case 0x1: return (int16_t *) &cpu->sp;
-
-    case 0x2:{
-      r2 = sr_to_value(emu);
-      return &r2;
-    }
-      
+    case 0x0: return &cpu->pc;
+    case 0x1: return &cpu->sp;
+    case 0x2: return &cpu->sr;
     case 0x3: return &cpu->cg2;
     case 0x4: return &cpu->r4;
     case 0x5: return &cpu->r5;

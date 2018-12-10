@@ -79,7 +79,6 @@ int main(int argc, char *argv[])
   // display first round of registers
   display_registers(emu);
   disassemble(emu, cpu->pc, 1);
-  update_register_display(emu);
 
   // Fetch-Decode-Execute Cycle (run machine)
   while (!deb->quit) {

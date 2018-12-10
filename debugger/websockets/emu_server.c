@@ -387,7 +387,6 @@ int callback_emu (
 	   printf("Got play\n");
 	   cpu->running = true;
 	   deb->debug_mode = false;
-	   update_register_display(emu);
 
 	   return 0;
 	 }
@@ -402,7 +401,6 @@ int callback_emu (
 	     // display first round of registers
 	     display_registers(emu);
 	     disassemble(emu, cpu->pc, 1);
-	     update_register_display(emu);
 	   }
 	   
 	   return 0;
@@ -433,7 +431,6 @@ int callback_emu (
 
 	   if (!cpu->running && deb->debug_mode) {
 	     exec_cmd(emu, buf, len);	  
-	     update_register_display(emu);
 	   }
 
 	   return 0;
