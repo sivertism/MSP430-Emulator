@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include "formatI.h"
+#include "opcodes.h"
 
 void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 {
@@ -44,6 +45,7 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
     uint8_t destination = (instruction & 0x000F);
     uint8_t ad_flag = (instruction & 0x0080) >> 7;
     uint8_t bw_flag = (instruction & 0x0040) >> 6;
+    uint16_t pc_start = cpu->pc - 2; // pc at beginning of instruction
 
     char s_reg_name[10], d_reg_name[10];
 
@@ -96,10 +98,6 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             sprintf(asm_operands, "%s, %s", s_reg_name, d_reg_name);
         }
 
-        if (!disassemble) {
-            bw_flag == BYTE ? *d_reg &= 0x00FF : 0;
-        }
-
         destination_addr = d_reg;          /* Destination Register */
         dest_value = *d_reg;
         is_daddr_virtual = 0;
@@ -147,7 +145,10 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             dest_vaddress = (*d_reg + destination_offset);
         }
 
-        dest_value = read_memory_cb(dest_vaddress, bw_flag ? BYTE : WORD);
+        if (opcode != OP_MOV) {
+            dest_value = read_memory_cb(dest_vaddress, bw_flag);
+        }
+
         is_daddr_virtual = 1;
         is_saddr_virtual = 0;
 
@@ -168,10 +169,8 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             source_offset = fetch(emu);
             uint16_t virtual_addr = *s_reg + source_offset - 2;
 
-//            source_value = *get_addr_ptr(virtual_addr);
             source_vaddress = virtual_addr;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
             is_saddr_virtual = 1;
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
@@ -180,10 +179,8 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
         }
         else if (source == 2) {            /* Source Absolute */
             source_offset = fetch(emu);
-//            source_value = *get_addr_ptr(source_offset);
             source_vaddress = source_offset;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
             is_saddr_virtual = 1;
 
 
@@ -195,11 +192,9 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
         }
         else {                             /* Source Indexed */
             source_offset = fetch(emu);
-//            source_value = *get_addr_ptr(*s_reg + source_offset);
 
             source_vaddress = *s_reg + source_offset;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
             is_saddr_virtual = 1;
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
@@ -207,10 +202,6 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 
             sprintf(asm_operands, "0x%04X(%s), %s",
                     (uint16_t) source_offset, s_reg_name, d_reg_name);
-        }
-
-        if (!disassemble) {
-            bw_flag == BYTE ? *d_reg &= 0x00FF : 0;
         }
 
         destination_addr = d_reg;          /* Destination register */
@@ -238,12 +229,10 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
         }
         else if (source == 0) {            /* Source Symbolic */
             source_offset = fetch(emu);
-            uint16_t virtual_addr = cpu->pc + source_offset - 4;
+            uint16_t virtual_addr = cpu->pc + source_offset - 2;
 
-//            source_value = *get_addr_ptr(virtual_addr);
             source_vaddress = virtual_addr;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
             is_saddr_virtual = 1;
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
@@ -253,11 +242,9 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
         }
         else if (source == 2) {            /* Source Absolute */
             source_offset = fetch(emu);
-//            source_value = *get_addr_ptr(source_offset);
 
             source_vaddress = source_offset;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
             is_saddr_virtual = 1;
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
@@ -267,10 +254,8 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
         }
         else {                             /* Source Indexed */
             source_offset = fetch(emu);
-//            source_value = *get_addr_ptr(*s_reg + source_offset);
             source_vaddress = *s_reg + source_offset;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
             is_saddr_virtual = 1;
 
             sprintf(hex_str_part, "%04X", (uint16_t)source_offset);
@@ -290,23 +275,23 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 
             destination_addr = get_addr_ptr(virtual_addr);
             dest_vaddress = virtual_addr;
-            dest_value = read_memory_cb(dest_vaddress, bw_flag ? BYTE : WORD);
             sprintf(asm_op2, "0x%04X", virtual_addr);
         }
         else if (destination == 2) {   /* Destination Absolute */
             destination_addr = get_addr_ptr(destination_offset);
             dest_vaddress = destination_offset;
-            dest_value = read_memory_cb(dest_vaddress, bw_flag ? BYTE : WORD);
             sprintf(asm_op2, "&0x%04X", (uint16_t) destination_offset);
         }
         else {                         /* Destination indexed */
             destination_addr = get_addr_ptr(*d_reg + destination_offset);
             dest_vaddress = *d_reg + destination_offset;
-            dest_value = read_memory_cb(dest_vaddress, bw_flag ? BYTE : WORD);
             sprintf(asm_op2, "0x%04X(%s)", (uint16_t)destination_offset, d_reg_name);
         }
 
         is_daddr_virtual = 1;
+        if (opcode != OP_MOV) {
+            dest_value = read_memory_cb(dest_vaddress, bw_flag);
+        }
 
         strncat(asm_operands, asm_op2, sizeof asm_op2);
     }
@@ -320,16 +305,10 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             is_saddr_virtual = 0;
         }
         else {                             /* Source Indirect */
-//            source_value = *get_addr_ptr(*s_reg);
             is_saddr_virtual = 1;
             source_vaddress = *s_reg;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
             sprintf(asm_operands, "@%s, %s", s_reg_name, d_reg_name);
-        }
-
-        if (!disassemble) {
-            bw_flag == BYTE ? *d_reg &= 0x00FF : 0;
         }
 
         destination_addr = d_reg;          /* Destination Register */
@@ -355,42 +334,40 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             sprintf(asm_operands, "#0x%04X, ", source_value);
         }
         else {                             /* Source Indirect */
-//            source_value = *get_addr_ptr(*s_reg);
             is_saddr_virtual = 1;
             source_vaddress = *s_reg;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
 
             sprintf(asm_operands, "@%s, ", s_reg_name);
         }
 
         if (destination == 0) {        /* Destination Symbolic */
             uint16_t virtual_addr = cpu->pc + destination_offset - 2;
-
             dest_vaddress = virtual_addr;
-            dest_value = read_memory_cb(dest_vaddress, bw_flag ? BYTE : WORD);
 
             destination_addr = get_addr_ptr(virtual_addr);
             sprintf(asm_op2, "0x%04X", virtual_addr);
         }
         else if (destination == 2) {   /* Destination Absolute */
             destination_addr = get_addr_ptr(destination_offset);
-
             dest_vaddress = destination_offset;
-            dest_value = read_memory_cb(dest_vaddress, bw_flag ? BYTE : WORD);
 
             sprintf(asm_op2, "&0x%04X", destination_offset);
         }
         else {                         /* Destination Indexed */
             destination_addr = get_addr_ptr(*d_reg + destination_offset);
-
             dest_vaddress = *d_reg + destination_offset;
-            dest_value = read_memory_cb(dest_vaddress, bw_flag ? BYTE : WORD);
 
-            sprintf(asm_op2, "0x%04X(%s)", (uint16_t)destination_offset, d_reg_name);
+            sprintf(asm_op2,
+                    "0x%04X(%s)",
+                    (uint16_t)destination_offset,
+                    d_reg_name);
         }
 
         is_daddr_virtual = 1;
+        if (opcode != OP_MOV) {
+            dest_value = read_memory_cb(dest_vaddress, bw_flag);
+        }
 
         strncat(asm_operands, asm_op2, sizeof asm_op2);
     }
@@ -421,23 +398,15 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
                         (uint8_t) source_value, d_reg_name);
             }
         }
-        else {                              /* Source Indirect AutoIncrement */
-//            source_value = *get_addr_ptr(*s_reg);
+        else {                              /* Source Indirect Auto Increment */
 
             is_saddr_virtual = 1;
             source_vaddress = *s_reg;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
 
             sprintf(asm_operands, "@%s+, %s", s_reg_name, d_reg_name);
 
-            if (!disassemble) {
-                bw_flag == WORD ? *s_reg += 2 : (*s_reg += 1);
-            }
-        }
-
-        if (!disassemble) {
-            bw_flag == BYTE ? *d_reg &= 0x00FF : 0;
+            *s_reg += bw_flag ? 1 : 2;
         }
 
         is_daddr_virtual = 0;
@@ -470,17 +439,13 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             sprintf(asm_operands, "#0x%04X, ", (uint16_t)source_value);
         }
         else {                             /* Source Indirect Auto Increment */
-//            source_value = *get_addr_ptr(*s_reg);
             is_saddr_virtual = 1;
             source_vaddress = *s_reg;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
 
             sprintf(asm_operands, "@%s+, ", s_reg_name);
 
-            if (!disassemble) {
-                bw_flag == WORD ? *s_reg += 2 : (*s_reg += 1);
-            }
+            *s_reg += bw_flag ? 1 : 2;
         }
 
         destination_offset = fetch(emu);
@@ -507,10 +472,10 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
                     (uint16_t) destination_offset, d_reg_name);
         }
 
-        // Fetch destination value
-        dest_value = read_memory_cb(dest_vaddress, bw_flag ? BYTE : WORD);
-
         is_daddr_virtual = 1;
+        if (opcode != OP_MOV) {
+            dest_value = read_memory_cb(dest_vaddress, bw_flag);
+        }
 
         strncat(asm_operands, asm_op2, sizeof asm_op2);
     }
@@ -534,13 +499,9 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
             result = bw_flag ? source_value & 0xFF : source_value;
 
             if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
+                write_memory_cb(dest_vaddress, result, bw_flag);
             } else {
-                if (bw_flag==WORD){
-                    *destination_addr = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) destination_addr) = (uint8_t) result;
-                }
+                *destination_addr = result;
             }
 
             break;
@@ -561,35 +522,26 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        *
        */
         case 0x5:{
-            result = bw_flag ?
-                        (uint8_t)((uint8_t)dest_value + (uint8_t)source_value)
-                      : dest_value + source_value;
+
+            if (bw_flag) {
+                dest_value = truncate_byte(dest_value);
+                source_value = truncate_byte(source_value);
+            }
+
+            result = dest_value + source_value;
 
             if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
+                write_memory_cb(dest_vaddress, result, bw_flag);
             } else {
-                if (bw_flag==WORD){
-                    *destination_addr = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) destination_addr) = (uint8_t) result;
-                }
+                *destination_addr = result;
             }
 
             bool c, z, n, v;
-            z = result==0;
-            n = result<0;
-            c = is_carried(dest_value, source_value, bw_flag);
-
-            if (dest_value>0 && source_value>0){
-                v = result<0;
-            } else if (dest_value<0 && source_value<0){
-                v = result>0;
-            } else {
-                v = false;
-            }
-
+            z = is_zero(result, bw_flag);
+            n = is_negative(result, bw_flag);
+            c = is_add_carry(dest_value, source_value, 0, bw_flag);
+            v = is_add_overflow(dest_value, source_value, 0, bw_flag);
             set_sr_flags(cpu, c, z, n, v);
-
             break;
         }
 
@@ -606,38 +558,32 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        */
         case 0x6:{
 
-            result = bw_flag ? (uint8_t)source_value + get_carry(cpu) :
-                               source_value + get_carry(cpu);
+            if (bw_flag) {
+                dest_value = truncate_byte(dest_value);
+                source_value = truncate_byte(source_value);
+            }
+
+            result = source_value + dest_value + get_carry(cpu);
 
             if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
+                write_memory_cb(dest_vaddress, result, bw_flag);
             } else {
-                if (bw_flag==WORD){
-                    *destination_addr = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) destination_addr) = (uint8_t) result;
-                }
+                *destination_addr = bw_flag ? result & 0xFF : result;
             }
 
             bool c, z, n, v;
-            z = result==0;
-            n = result<0;
-            c = is_carried(dest_value, source_value, bw_flag);
-
-            if (dest_value>0 && source_value>0){
-                v = result<0;
-            } else if (dest_value<0 && source_value<0){
-                v = result>0;
-            } else {
-                v = false;
-            }
-
+            z = is_zero(result, bw_flag);
+            n = is_negative(result, bw_flag);
+            c = is_add_carry(
+                        dest_value, source_value, get_carry(cpu), bw_flag);
+            v = is_add_overflow(
+                        dest_value, source_value, get_carry(cpu), bw_flag);
             set_sr_flags(cpu, c, z, n, v);
 
             break;
         }
 
-            /* SUBC SOURCE, DESTINATION
+       /* SUBC SOURCE, DESTINATION
        *   Ex: SUB R4, R5
        *
        *   DST += ~SRC + C
@@ -652,36 +598,26 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        */
         case 0x7:{
 
-            if (bw_flag==WORD) {
-                result = dest_value - (source_value-1) + get_carry(cpu);
-            } else if (bw_flag == BYTE){
-                result = (int8_t)((int8_t)dest_value
-                                  - ((int8_t)source_value - 1)
-                                  + get_carry(cpu));
+            if (bw_flag) {
+                dest_value = truncate_byte(dest_value);
+                source_value = truncate_byte(source_value);
             }
 
+            result = dest_value - (source_value - 1) + get_carry(cpu);
+
             if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
+                write_memory_cb(dest_vaddress, result, bw_flag);
             } else {
-                if (bw_flag==WORD){
-                    *destination_addr = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) destination_addr) = (uint8_t) result;
-                }
+                *destination_addr = bw_flag ? result & 0xFF : result;
             }
 
             bool c, z, n, v;
-            z = result==0;
-            n = result<0;
-            c = is_carried(dest_value, source_value, bw_flag);
-
-            if (source_value < 0 && dest_value > 0){
-                v = result < 0;
-            } else if (source_value > 0 && dest_value < 0){
-                v = result > 0;
-            } else {
-                v = false;
-            }
+            z = is_zero(result, bw_flag);
+            n = is_negative(result, bw_flag);
+            c = is_sub_carry(
+                        dest_value, source_value, get_carry(cpu));
+            v = is_sub_overflow(
+                        dest_value, source_value, get_carry(cpu), bw_flag);
             set_sr_flags(cpu, c, z, n, v);
             break;
         }
@@ -700,36 +636,25 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
 
         case 0x8:{
 
-            result = bw_flag ?
-                        (int8_t)((int8_t)dest_value - (int8_t)source_value)
-                      : dest_value - source_value;
+            if (bw_flag) {
+                dest_value = truncate_byte(dest_value);
+                source_value = truncate_byte(source_value);
+            }
+
+            result = dest_value - source_value;
 
             if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
+                write_memory_cb(dest_vaddress, result, bw_flag);
             } else {
-                if (bw_flag==WORD){
-                    *destination_addr = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) destination_addr) = (uint8_t) result;
-                }
+                *destination_addr = bw_flag ? result & 0xFF : result;
             }
 
             bool c, z, n, v;
-            z = result==0;
-            n = result<0;
-
-            c = is_carried(dest_value, source_value, bw_flag);
-
-            if (source_value < 0 && dest_value > 0){
-                v = result < 0;
-            } else if (source_value > 0 && dest_value < 0){
-                v = result > 0;
-            } else {
-                v = false;
-            }
-
+            z = is_zero(result, bw_flag);
+            n = is_negative(result, bw_flag);
+            c = is_sub_carry(dest_value, source_value, 1);
+            v = is_sub_overflow(dest_value, source_value, 1, bw_flag);
             set_sr_flags(cpu, c, z, n, v);
-
             break;
         }
 
@@ -743,35 +668,18 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        */
         case 0x9:{
 
-            int16_t tmp_src, tmp_dst, result;
+            if (bw_flag) {
+                dest_value = truncate_byte(dest_value);
+                source_value = truncate_byte(source_value);
+            }
 
-            tmp_src = bw_flag ? (int8_t)source_value : source_value;
-            tmp_dst = bw_flag ? (int8_t)dest_value : dest_value;
-
-            result = tmp_src - tmp_dst;
+            result = dest_value - source_value;
 
             bool c, z, n, v;
-
-            n = result<0;
-            z = result==0;
-
-
-            if(bw_flag == WORD){
-                unsigned tmp = ((uint16_t)~source_value) + 1 +
-                                (uint16_t)dest_value;
-                c = (tmp > 0xffff);
-            } else if (bw_flag == BYTE){
-                unsigned tmp = ((uint8_t)~source_value)+1+(uint8_t)dest_value;
-                c = (tmp > 0xff);
-            }
-
-            if (tmp_src < 0 && tmp_dst > 0){
-                v = result < 0;
-            } else if (tmp_src > 0 && tmp_dst < 0){
-                v = result > 0;
-            } else {
-                v = false;
-            }
+            n = is_negative(result, bw_flag);
+            z = is_zero(result, bw_flag);
+            c = is_sub_carry(dest_value, source_value, 1);
+            v = is_sub_overflow(dest_value, source_value, 1, bw_flag);
             set_sr_flags(cpu, c, z, n, v);
             break;
         }
@@ -801,22 +709,13 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
       */
         case 0xB:{
 
-            if (bw_flag == WORD) {
-                result = source_value & dest_value;
-                set_sr_flags(cpu,
-                             result != 0,
-                             result == 0,
-                             (result>>15)>0,
-                             false);
-            }
-            else if (bw_flag == BYTE) {
-                uint8_t res = (uint8_t) source_value & (uint8_t)dest_value;
-                set_sr_flags(cpu,
-                             res != 0,
-                             res == 0,
-                             (res>>7)>0,
-                             false);
-            }
+            bool c, z, n, v;
+            result = source_value & dest_value;
+            n = is_negative(result, bw_flag);
+            z = is_zero(result, bw_flag);
+            c = !z;
+            v = false;
+            set_sr_flags(cpu, c, z, n, v);
 
             break;
         }
@@ -827,23 +726,12 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        */
         case 0xC:{
 
-            if (bw_flag == WORD) {
-//                *destination_addr &= (uint16_t) ~source_value;
-                result = dest_value & source_value;
-            }
-            else if (bw_flag == BYTE) {
-//                *(uint8_t *) destination_addr &= (uint8_t) ~source_value;
-                result = (dest_value & source_value) & 0x00FF;
-            }
+            result = dest_value & ~source_value;
 
             if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
+                write_memory_cb(dest_vaddress, result, bw_flag);
             } else {
-                if (bw_flag==WORD){
-                    *destination_addr = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) destination_addr) = (uint8_t) result;
-                }
+                *destination_addr = bw_flag ? result & 0xFF : result;
             }
 
             break;
@@ -854,21 +742,12 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        */
         case 0xD:{
 
-            if (bw_flag == WORD) {
-                result = dest_value | source_value;
-            }
-            else if (bw_flag == BYTE) {
-                result = (dest_value | source_value) & 0x00FF;
-            }
+            result = dest_value | source_value;
 
             if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
+                write_memory_cb(dest_vaddress, result, bw_flag);
             } else {
-                if (bw_flag==WORD){
-                    *destination_addr = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) destination_addr) = (uint8_t) result;
-                }
+                *destination_addr = bw_flag ? result & 0xFF : result;
             }
 
             break;
@@ -883,32 +762,20 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        */
         case 0xE:{
 
-            if (bw_flag == WORD) {
-                result = dest_value ^ source_value;
-                set_sr_flags(cpu,
-                             result != 0,
-                             result == 0,
-                             result < 0,
-                             (dest_value<0) && (source_value<0));
-            }
-            else if (bw_flag == BYTE) {
-                result = (int8_t)dest_value ^ (int8_t)source_value;
-                set_sr_flags(cpu,
-                             result != 0,
-                             result == 0,
-                             result < 0,
-                             ((int8_t)dest_value<0) &&
-                             ((int8_t)source_value<0));
-            }
+            result = dest_value ^ source_value;
+
+            bool c, z, n, v;
+            n = is_negative(result, bw_flag);
+            z = is_zero(result, bw_flag);
+            c = !z;
+            v = is_negative(dest_value, bw_flag) &&
+                    is_negative(source_value, bw_flag);
+            set_sr_flags(cpu, c, z, n, v);
 
             if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
+                write_memory_cb(dest_vaddress, result, bw_flag);
             } else {
-                if (bw_flag==WORD){
-                    *destination_addr = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) destination_addr) = (uint8_t) result;
-                }
+                *destination_addr = bw_flag ? result & 0xFF : result;
             }
 
             break;
@@ -923,40 +790,26 @@ void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble)
        */
         case 0xF:{
 
-            if (bw_flag == WORD) {
-//                *destination_addr &= (uint16_t)source_value;
+            result = dest_value & source_value;
 
-                result = dest_value & source_value;
-
-                set_sr_flags(cpu,
-                             result != 0,
-                             result == 0,
-                             result < 0,
-                             false);
-            }
-            else if (bw_flag == BYTE) {
-//                *(uint8_t *) destination_addr &= (uint8_t) source_value;
-
-                result = (int8_t)dest_value & (int8_t)source_value;
-
-                set_sr_flags(cpu,
-                             (int8_t)result != 0,
-                             (int8_t)result == 0,
-                             (int8_t)result < 0,
-                             false);
-            }
+            bool c, z, n, v;
+            n = is_negative(result, bw_flag);
+            z = is_zero(result, bw_flag);
+            c = !z;
+            v = false;
+            set_sr_flags(cpu, c, z, n, v);
 
             if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag ? BYTE : WORD);
+                write_memory_cb(dest_vaddress, result, bw_flag);
             } else {
-                if (bw_flag==WORD){
-                    *destination_addr = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) destination_addr) = (uint8_t) result;
-                }
+                *destination_addr = bw_flag ? result & 0xFF : result;
             }
 
             break;
+        }
+        default: {
+            fprintf(stderr, "INVALID FORMAT I OPCODE, EXITING.");
+            exit(1);
         }
 
         } //# End of switch

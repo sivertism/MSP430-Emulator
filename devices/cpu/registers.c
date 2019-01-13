@@ -19,8 +19,9 @@
 #include "registers.h"
 
 //##########+++ MSP430 Register initialization +++##########
-void initialize_msp_registers(Emulator *emu)
-{
+void
+initialize_msp_registers(Emulator *emu)
+ {
   Cpu *cpu = emu->cpu;
   Debugger *debugger = emu->debugger;
 
@@ -33,7 +34,8 @@ void initialize_msp_registers(Emulator *emu)
     cpu->r14 = cpu->r15 = 0;
 }
 
-void set_sr_flags(Cpu *cpu, bool C, bool Z, bool N, bool V){
+void
+set_sr_flags(Cpu *cpu, bool C, bool Z, bool N, bool V) {
     cpu->sr &= ~SR_FLAGS_MASK;   // Clear existing flags
     // Set new flags
     cpu->sr |= C ? SR_C : 0;
@@ -42,18 +44,40 @@ void set_sr_flags(Cpu *cpu, bool C, bool Z, bool N, bool V){
     cpu->sr |= V ? SR_V : 0;
 }
 
-bool get_carry(Cpu *cpu){
+bool
+get_carry(Cpu *cpu) {
     return ((cpu->sr & SR_C)>0);
 }
 
-bool get_zero_flag(Cpu *cpu){
+bool
+get_zero_flag(Cpu *cpu) {
     return((cpu->sr & SR_Z)>0);
 }
 
-bool get_negative_flag(Cpu *cpu){
+bool
+get_negative_flag(Cpu *cpu) {
     return((cpu->sr & SR_N)>0);
 }
 
-bool get_overflow_flag(Cpu *cpu){
+bool
+get_overflow_flag(Cpu *cpu) {
     return((cpu->sr & SR_V)>0);
+}
+
+/**
+ * @brief truncate_byte truncate 16-bit value to 8-bit as if only the
+ * lower 8 bits were read.
+ * Necessary because (u)int16_t can be represented by any size integer in the
+ * host system
+ * @param a
+ * @return Truncated value
+ */
+int16_t
+truncate_byte(uint16_t a) {
+    bool sign = (a & (1u<<7)) > 0;
+    if (sign) {
+        return ((a & 0xffu) | 0xffffff00u);
+    } else {
+        return (a & 0xffu);
+    }
 }

@@ -33,7 +33,11 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
 
     uint8_t condition = (instruction & 0x1C00) >> 10;
     int16_t signed_offset = (instruction & 0x03FF) * 2;
-    bool negative = signed_offset >> 9;
+    bool negative = (instruction & (1u<<9)) > 0; // signed_offset >> 9;
+
+    if (negative) { /* Sign Extend for Arithmetic Operations */
+        signed_offset |= 0xfffff800;
+    }
 
     char value[20];
 
@@ -42,10 +46,6 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
     char hex_str[100] = {0};
 
     sprintf(hex_str, "%04X", instruction);
-
-    if (negative) { /* Sign Extend for Arithmetic Operations */
-        signed_offset |= 0xF800;
-    }
 
     if (!disassemble) {
         switch(condition){
@@ -146,9 +146,9 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
             break;
         }
 
-        default:{
-            puts("Undefined Jump operation!\n");
-            return;
+        default: {
+            fprintf(stderr, "INVALID FORMAT III OPCODE, EXITING.");
+            exit(1);
         }
 
         } //# End of Switch

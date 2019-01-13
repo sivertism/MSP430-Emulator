@@ -18,58 +18,27 @@
 
 #include "decoder.h"
 #include "flag_handler.h"
+#include "registers.h"
 
 /**
- * @brief Test if the result of the asm instruction is zero
- * @param result_addr The address of the operation's result
- * @param bw_flag Byte or Word flag
- * @return true if zero, false otherwise
+ * @brief is_negative Check if number is negative.
+ * @param result
+ * @param bw_flag
+ * @return
  */
-uint8_t is_zero (uint16_t *result_addr, uint8_t bw_flag)
+bool
+is_negative(uint16_t result, uint8_t bw_flag)
 {
-  if (bw_flag == WORD) {
-    if (*result_addr == 0 ) {
-      return 1;
-    }
-
-    return 0;
-  }
-  else if (bw_flag == BYTE) {
-    if (*(int8_t *) result_addr == 0) {
-      return 1;
-    }
-
-    return 0;
-  }
-
-  return false;
+    return bw_flag ? (result & (1u<<7)) > 0 : (result & (1u<<15)) > 1;
 }
 
-/**
- * @brief Test if the result of the asm instruction is negative
- * @param result_addr The address of the operation's result
- * @param bw_flag Byte or Word flag
- * @return true if zero, false otherwise
- */
-uint8_t is_negative(int16_t *result_addr, uint8_t bw_flag)
+bool
+is_zero(uint16_t result, uint8_t bw_flag)
 {
-  if (bw_flag == WORD) {
-    if (*result_addr < 0) {
-      return 1;
-    }
-
-    return 0;
-  }
-  else if (bw_flag == BYTE) {
-    if (*((int8_t *) result_addr) < 0) {
-      return 1;
-    }
-
-    return 0;
-  }
-
-  return false;
+    return bw_flag ? (result & 0xff) == 0
+                   : (result & 0xffff) == 0;
 }
+
 
 /**
  * @brief Test if the result of the asm instruction WILL carry
@@ -99,6 +68,88 @@ uint8_t is_carried(uint32_t original_dst_value, uint32_t source_value,
   }
 
   return false;
+}
+
+/**
+ * @brief is_sub_carry Check if the subtraction of a - b will carry.
+ * ref: https://en.wikipedia.org/wiki/Carry_flag
+ * @param a
+ * @param b
+ * @param c Carry flag
+ * @return
+ */
+bool
+is_sub_carry(
+        int32_t       a,
+        int32_t       b,
+        bool          c
+        ) {
+    return a >= -((~b) + c);
+}
+
+bool
+is_sub_overflow(
+        int32_t     a,
+        int32_t     b,
+        bool        c,
+        uint8_t     bw_flag) {
+
+    bool v;
+    int32_t result = a + (~b) + c;
+
+    bool aNeg = is_negative(a, bw_flag);
+    bool bNeg = is_negative(b, bw_flag);
+
+    if(!aNeg && bNeg) {  // pos - neg = neg
+        v = is_negative(result, bw_flag);
+    } else if (aNeg && !bNeg) { // neg - pos = pos
+        v = !is_negative(result, bw_flag);
+    } else {
+        v = false;
+    }
+    return v;
+}
+
+bool
+is_add_overflow(
+        int32_t     a,
+        int32_t     b,
+        bool        c,
+        uint8_t     bw_flag) {
+
+    bool v;
+    int32_t result = a + b + c;
+
+    bool aNeg = is_negative(a, bw_flag);
+    bool bNeg = is_negative(b, bw_flag);
+
+    if(aNeg && bNeg) {  // pos + pos = neg
+        v = is_negative(result, bw_flag);
+    } else if (!aNeg && !bNeg) { // neg + neg = pos
+        v = !is_negative(result, bw_flag);
+    } else {
+        v = false;
+    }
+    return v;
+}
+
+bool
+is_add_carry(
+        uint32_t     a,
+        uint32_t     b,
+        bool         c,
+        uint8_t      bw_flag) {
+
+    // Need to clear upper bits (in case of of signed values)
+    if (bw_flag == WORD) {
+        a = a & 0xffffu;
+        b = b & 0xffffu;
+    } else {
+        a = a & 0xffu;
+        b = b & 0xffu;
+    }
+    uint32_t res = a + b + c;
+    return bw_flag ? res > 0xffu : res > 0xffffu;
 }
 
 /**

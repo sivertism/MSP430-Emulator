@@ -27,12 +27,16 @@
 uint8_t is_overflowed (uint16_t source, uint16_t original_destination,
                        uint16_t *result_addr, uint8_t bw_flag);
 
-uint8_t is_negative (int16_t *result_addr, uint8_t bw_flag);
-
-uint8_t is_zero (uint16_t *result_addr, uint8_t bw_flag);
+bool is_negative(uint16_t result, uint8_t bw_flag);
+bool is_zero(uint16_t result, uint8_t bw_flag);
 
 uint8_t is_carried (uint32_t original_dst_value, uint32_t source_value,
                     uint8_t bw_flag);
 
+bool is_sub_carry(int32_t a, int32_t b, bool c);
+bool is_sub_overflow(int32_t a, int32_t b, bool c, uint8_t bw_flag);
+
+bool is_add_overflow(int32_t a, int32_t b, bool c, uint8_t bw_flag);
+bool is_add_carry(uint32_t a, uint32_t b, bool c, uint8_t bw_flag);
 
 #endif

@@ -55,12 +55,6 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 
     sprintf(hex_str, "%04X", instruction);
 
-    /*
-  printf("Opcode: 0x%01X  Source bits: 0x%01X\nAS_Flag: 0x%01X  "\
-     "BW_Flag: 0x%01X\n",
-         opcode, source, as_flag, bw_flag);
-  */
-
     /* Spot CG1 and CG2 Constant generator instructions */
     if ( (source == 2 && as_flag > 1) || source == 3 ) {
         constant_generator_active = 1;
@@ -93,8 +87,6 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 
             sprintf(asm_operand, "%s", reg_name);
         }
-
-        bw_flag == BYTE ? *reg &= 0x00FF : 0;
     }
 
     /* Indexed;      Ex: PUSH 0x0(Rs) */
@@ -111,23 +103,19 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
         }
         else if (source == 0) {            /* Source Symbolic */
             source_offset = fetch(emu);
-            uint16_t virtual_addr = cpu->pc + source_offset;
-
+            source_vaddress = cpu->pc + source_offset - 2;
+            source_value = read_memory_cb(source_vaddress, bw_flag);
             is_saddr_virtual = 1;
-            source_vaddress = virtual_addr;
-            source_value = read_memory_cb(virtual_addr,
-                                          bw_flag==BYTE ? BYTE : WORD);
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
             strncat(hex_str, hex_str_part, sizeof hex_str);
-            sprintf(asm_operand, "0x%04X", virtual_addr);
+            sprintf(asm_operand, "0x%04X", source_vaddress);
         }
         else if (source == 2) {            /* Source Absolute */
             source_offset = fetch(emu);
-            is_saddr_virtual = 1;
             source_vaddress = source_offset;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag==BYTE ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
+            is_saddr_virtual = 1;
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_value);
             strncat(hex_str, hex_str_part, sizeof hex_str);
@@ -135,10 +123,9 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
         }
         else {                             /* Source Indexed */
             source_offset = fetch(emu);
-            is_saddr_virtual = 1;
             source_vaddress = *reg + source_offset;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag==BYTE ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
+            is_saddr_virtual = 1;
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
             strncat(hex_str, hex_str_part, sizeof hex_str);
@@ -157,10 +144,9 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             sprintf(asm_operand, "#0x%04X", immediate_constant);
         }
         else {                             /* Source Indirect */
-            is_saddr_virtual = 1;
             source_vaddress = *reg;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag==BYTE ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
+            is_saddr_virtual = 1;
 
             sprintf(asm_operand, "@%s", reg_name);
         }
@@ -193,15 +179,13 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             }
         }
         else {                            /* Source Indirect AutoIncrement */
-            //      source_address = get_addr_ptr(*reg);
-            //      source_value = *source_address;
-            is_saddr_virtual = 1;
             source_vaddress = *reg;
-            source_value = read_memory_cb(source_vaddress,
-                                          bw_flag==BYTE ? BYTE : WORD);
+            source_value = read_memory_cb(source_vaddress, bw_flag);
+            is_saddr_virtual = 1;
 
             sprintf(asm_operand, "@%s+", reg_name);
-            bw_flag == WORD ? *reg += 2 : (*reg += 1);
+
+            *reg += bw_flag ? 1 : 2;
         }
     }
 
@@ -221,35 +205,34 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
        * Z: Set if result is zero, reset otherwise
        * C: Loaded from the LSB
        * V: Reset
-       * TODO: UNDEFINED BEHAVIOR DURRING CONSTANT MANIPULATION, BROKEN
        */
         case 0x0:{
             uint16_t CF = get_carry(cpu);
             bool c, z, n, v;
 
+            result = source_value;
+            result >>= 1;
+
             if (bw_flag == WORD) {
-                c = source_value & 0x0001;  /* Set CF from LSB */
-                result = ((~(1u<<15)) & (source_value>>1)) | (CF<<15);
+                result &= ~(1u<<15);        // Clear MSB
+                result |= (CF << 15);       // Insert carry on MSB
+
             } else if (bw_flag == BYTE){
-                int8_t source_byte = source_value & 0xFF;
-                c = source_byte & 1;
-                source_byte = ((~(1u<<7)) & (source_byte>>1)) | (CF<<7);
-                result = source_byte;
+                result &= ~(1u << 7);       // Clear MSB
+                result |= (CF << 7);        // Insert carry on MSB
             }
 
             if (is_saddr_virtual){  // Write result to memory
-                write_memory_cb(source_vaddress, result,
-                                bw_flag==BYTE ? BYTE : WORD);
+                write_memory_cb(source_vaddress, result, bw_flag);
             } else {                // Write result to register
-                if (bw_flag==WORD){
-                    *source_address = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) source_address) = (uint8_t) result;
-                }
+                *source_address = bw_flag ? result & 0xFF : result;
             }
 
-            z = result==0;
-            n = result<0;
+            // Make sure only relevant part of
+
+            c = source_value & 1u; // set next c from LSB
+            n = CF; // Previous CF is now MSB
+            z = is_zero(result, bw_flag);
             v = false;
             set_sr_flags(cpu, c, z, n, v);
 
@@ -262,11 +245,11 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
         * No flags affected
         */
         case 0x1:{
-            uint16_t upper_nibble, lower_nibble;
+            uint16_t upper, lower;
 
-            upper_nibble = (source_value & 0xFF00);
-            lower_nibble = (source_value & 0x00FF);
-            result = (lower_nibble<<8) | (upper_nibble>>8);
+            upper = (source_value & 0xFF00);
+            lower = (source_value & 0x00FF);
+            result = (lower << 8) | (upper >> 8);
 
             if (is_saddr_virtual){  // Write result to memory
                 write_memory_cb(source_vaddress, result, WORD);
@@ -286,6 +269,9 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
        * V: Reset
        */
         case 0x2:{
+
+            bool c, z, n, v;
+
             if (bw_flag == WORD){
                 result = (source_value & (1<<15)) | // MSB
                         (source_value >> 1);
@@ -295,21 +281,15 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             }
 
             if (is_saddr_virtual){  // Write result to memory
-                write_memory_cb(source_vaddress, result,
-                                bw_flag==BYTE ? BYTE : WORD);
+                write_memory_cb(source_vaddress, result, bw_flag);
             } else {                // Write result to register
-                if (bw_flag==WORD){
-                    *source_address = result;
-                } else if (bw_flag == BYTE){
-                    *((uint8_t *) source_address) = (uint8_t) result;
-                }
+                *source_address = bw_flag ? result & 0xFF : result;
             }
 
-            bool c, z, n, v;
-            z = result==0;
-            n = result<0;
             c = source_value & 1;
             v = false;
+            n = is_negative(result, bw_flag);
+            z = is_zero(result, bw_flag);
             set_sr_flags(cpu, c, z, n, v);
 
             break;
@@ -328,7 +308,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
 
         case 0x3:{
             result = source_value & (1<<7) ? source_value | 0xFF00 :
-                                             source_value & 0xFF00;
+                                             source_value & 0x00FF;
 
             if (is_saddr_virtual){  // Write result to memory
                 write_memory_cb(source_vaddress, result, WORD);
@@ -337,9 +317,9 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             }
 
             bool c, z, n, v;
-            z = result==0;
-            n = result<0;
-            c = result!=0;
+            z = is_zero(result, bw_flag);
+            n = is_negative(result, bw_flag);
+            c = !z;
             v = false;
             set_sr_flags(cpu, c, z, n, v);
 
@@ -357,8 +337,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             cpu->sp -= 2; /* Yes, even for BYTE Instructions */
 
             // Write result to memory
-            write_memory_cb(cpu->sp , source_value,
-                            bw_flag==BYTE ? BYTE : WORD);
+            write_memory_cb(cpu->sp , source_value, bw_flag);
 
             break;
         }
@@ -390,8 +369,9 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             cpu->sp += 2;
             break;
         }
-        default:{
-            printf("Unknown Single operand instruction.\n");
+        default: {
+            fprintf(stderr, "INVALID FORMAT II OPCODE, EXITING.");
+            exit(1);
         }
 
         } //# End of Switch

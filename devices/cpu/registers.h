@@ -59,6 +59,6 @@ bool get_carry(Cpu *cpu);
 bool get_zero_flag(Cpu *cpu);
 bool get_negative_flag(Cpu *cpu);
 bool get_overflow_flag(Cpu *cpu);
-
+int16_t truncate_byte(uint16_t source);
 
 #endif
