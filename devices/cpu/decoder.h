@@ -31,9 +31,9 @@
 
 int16_t run_constant_generator(uint8_t source, uint8_t as_flag);
 
-void decode(Emulator *emu, uint16_t instruction, bool disassemble);
+void decode(Cpu *cpu, uint16_t instruction, bool disassemble);
 
-uint16_t fetch(Emulator *emu);
+uint16_t fetch(Cpu *cpu);
 
 enum { 
   WORD, 

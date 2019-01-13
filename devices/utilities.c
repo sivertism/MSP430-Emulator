@@ -17,8 +17,6 @@ along with this program. If not, see <http://www.gnu.org/licenses
 
 #include "utilities.h"
 
-uint16_t * host_base;
-
 void (*write_memory_cb)(uint16_t,uint16_t,uint8_t);
 uint16_t (*read_memory_cb)(uint16_t,uint8_t);
 
@@ -31,80 +29,13 @@ void set_read_memory_cb(uint16_t (*functionPtr)(uint16_t,uint8_t)){
 }
 
 /**
- * @brief This function loads the default TI bootloader code into virtual mem
- * @param virt_addr The location in virtual memory to load the bootloader
- */
-void load_bootloader(uint16_t virt_addr)
-{
-  uint16_t *real_addr = get_addr_ptr(virt_addr);
-  
-  memmove(real_addr, blc, sizeof blc);
-  printf("Loaded booloader code into address 0x%04X\n", virt_addr);
-}
-
-/**
- * @brief This function loads firmware from a binary file on disk into the
- * virtual memory of the emulated device at base virt_loc
- * @param file_name The file name of the binary to load into virtual memory
- * @param virt_loc The location in virtual memory to load the firmware
- */
-void load_firmware(char *file_name, uint16_t virt_addr)
-{
-  uint32_t size, result;
-  char str[100] = {0};
-
-  sprintf(str, "Loading firmware: ( %s )\n", file_name);
-  
-  printf("%s", str);
-
-  FILE *fd = fopen(file_name, "rb+");
-  
-  if (fd == NULL) {
-    printf("Could not open %s, exiting.\n", file_name);
-    exit(1);
- }
-
-  /* obtain file size */
-  fseek(fd, 0, SEEK_END);
-  size = ftell(fd);
-  rewind(fd);
-
-  uint16_t *real_addr = get_addr_ptr(virt_addr);
-
-  result = fread(real_addr, 1, size, fd);
-
-  sprintf(str, "Placed %d bytes into flash\n\n", result);
-  printf("%s", str);
-//  print_console(emu, str);
-
-  fclose(fd);
-}
-
-uint16_t *get_stack_ptr(Emulator *emu) {
-  Cpu *cpu = emu->cpu;
-  
-  return (uint16_t *) ( ((void *)MEMSPACE + cpu->sp) );
-}
-
-/**
- * @brief Get the host's pointer to the virtual address of the guest
- * @param virt_addr The virtual address of the guest to translate to a useable
- * one in context of the host
- * @return Pointer to the host's location of the guest's memory address
- */
-uint16_t *get_addr_ptr(uint16_t virt_addr) {
-  return (uint16_t *) ( (void *)MEMSPACE + virt_addr );
-}
-
-/**
  * @brief Get a pointer to the register specified by the numeric register value
  * @param cpu A pointer to the CPU structure
  * @param reg The numeric value of the register
  * @return Pointer to the register in question, NULL if register doesn't exist
  */
-int16_t *get_reg_ptr(Emulator *emu, uint8_t reg)
+int16_t *get_reg_ptr(Cpu *cpu, uint8_t reg)
 {
-  Cpu *cpu = emu->cpu;
   
   switch (reg) {  
     case 0x0: return &cpu->pc;
@@ -310,40 +241,4 @@ void reg_num_to_name(uint8_t number, char *name)
       return;
     }
   }
-}
-
-/**
- * @brief This function displays the help menu to the user if he (or - but in
- * practice all too seldom - she) enters incorrect parameters or prompts the 
- * help menu with "help" or "h"
- */
-void display_help(Emulator *emu)
-{
-  Debugger *deb = emu->debugger;
-  char *help_str = (char *) malloc(3000);
-
-  sprintf(help_str,
-	  "**************************************************\n"\
-	  "*\t\tMSP430-Emulator\n*\n*\tUsage: ./msp430 BINARY_FIRMWARE\n*\n"\
-	  "* run\t\t\t[Run Program Until Breakpoint is Hit]\n"\
-	  "* step [N]\t\t[Step Into Instruction]\n"\
-	  "* dump [HEX_ADDR|Rn]\t[Dump Memory direct or at register value]\n"\
-	  "* set [HEX_ADDR|Rn]\t[Set Memory or Register Location]\n"\
-	  "* dis [N][HEX_ADDR]\t[Disassemble Instructions]\n"\
-	  "* break ADDR\t\t[Set a Breakpoint]\n"\
-	  "* bps\t\t\t[Display Breakpoints]\n"\
-	  "* regs\t\t\t[Display Registers]\n"\
-	  "* CTRL+C\t\t[Pause Execution]\n"\
-	  "* reset\t\t\t[Reset Machine]\n"\
-	  "* quit\t\t\t[Exit program]\n"\
-	  "**************************************************\n");
-
-  if (deb->web_interface) {
-    //print_console(emu, help_str);
-  }
-  else {
-    printf("%s", help_str);
-  }
-
-  free(help_str);
 }

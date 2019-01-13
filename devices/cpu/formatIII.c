@@ -26,11 +26,8 @@
 
 #include "decoder.h"
 
-void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
+void decode_formatIII(Cpu *cpu, uint16_t instruction, bool disassemble)
 {
-    Cpu *cpu = emu->cpu;
-    Debugger *debugger = emu->debugger;
-
     uint8_t condition = (instruction & 0x1C00) >> 10;
     int16_t signed_offset = (instruction & 0x03FF) * 2;
     bool negative = (instruction & (1u<<9)) > 0; // signed_offset >> 9;
@@ -211,7 +208,7 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
         strncat(mnemonic, value, sizeof(mnemonic));
         strncat(mnemonic, "\n", sizeof(mnemonic));
 
-        if (emu->debugger->debug_mode){//disassemble && emu->debugger->debug_mode) {
+//        if (emu->debugger->debug_mode){//disassemble && emu->debugger->debug_mode) {
             int i;
             char one = 0, two = 0;
 
@@ -239,7 +236,7 @@ void decode_formatIII(Emulator *emu, uint16_t instruction, bool disassemble)
 
             //print_console(emu, "\t");
             //print_console(emu, mnemonic);
-        }
+//        }
 
 //    }
 }

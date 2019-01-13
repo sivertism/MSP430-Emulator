@@ -22,6 +22,6 @@
 #include "flag_handler.h"
 #include "../utilities.h"
 
-void decode_formatI(Emulator *emu, uint16_t instruction, bool disassemble);
+void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble);
 
 #endif

@@ -19,55 +19,40 @@
 #include "decoder.h"
 
 /*##########+++ CPU Fetch Cycle  +++##########*/
-uint16_t fetch(Emulator *emu)
+uint16_t fetch(Cpu *cpu)
 {
-  Cpu *cpu = emu->cpu;
-  uint16_t word, *p;
-  
-//  p = (get_addr_ptr(cpu->pc));
-//  word = *p;
-
-  word = read_memory_cb(cpu->pc, WORD);
-
+  uint16_t word = read_memory_cb(cpu->pc, WORD);
   cpu->pc += 2;
-  
   return word;
 }
 
 /*##########+++ CPU Decode Cycle +++##########*/
-void decode(Emulator *emu, uint16_t instruction, bool disassemble)
+void decode(Cpu *cpu, uint16_t instruction, bool disassemble)
 {  
-  Cpu *cpu = emu->cpu;
-  Debugger *debugger = emu->debugger;
-
-  int done = 0;
   uint8_t format_id;
-  memset(debugger->mnemonic, 0, sizeof debugger->mnemonic);
 
   format_id = (uint8_t)(instruction >> 12);
 
   if (format_id == 0x1) {
     // format II (single operand) instruction //
-    decode_formatII(emu, instruction, disassemble);  
+    decode_formatII(cpu, instruction, disassemble);
   }    
   else if (format_id >= 0x2 && format_id <= 3) {
     // format III (jump) instruction //
-    decode_formatIII(emu, instruction, disassemble);
+    decode_formatIII(cpu, instruction, disassemble);
   }
   else if (format_id >= 0x4) {
     // format I (two operand) instruction //
-    decode_formatI(emu, instruction, disassemble);
+    decode_formatI(cpu, instruction, disassemble);
   }
   else {
     char inv[100] = {0};
 
     sprintf(inv, "%04X\t[INVALID INSTRUCTION]\n", instruction);
-//    print_console(emu, inv);
     printf("%s", inv);
     
     cpu->pc -= 2;
     cpu->running = false;
-    debugger->debug_mode = true;
   }
 }
 

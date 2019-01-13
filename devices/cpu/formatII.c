@@ -29,10 +29,9 @@
 #include "decoder.h"
 #include "../utilities.h"
 
-void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
+void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
 {
     int is_saddr_virtual=0;   /// Indicate if source source address is virtual
-    Cpu *cpu = emu->cpu;
 
     uint8_t opcode = (instruction & 0x0380) >> 7;
     uint8_t bw_flag = (instruction & 0x0040) >> 6;
@@ -42,7 +41,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
     char reg_name[10];
     reg_num_to_name(source, reg_name);
 
-    uint16_t *reg = get_reg_ptr(emu, source);
+    uint16_t *reg = get_reg_ptr(cpu, source);
     uint16_t bogus_reg; /* For immediate values to be operated on */
 
     uint8_t constant_generator_active = 0;    /* Specifies if CG1/CG2 active */
@@ -102,7 +101,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             sprintf(asm_operand, "#0x%04X", source_value);
         }
         else if (source == 0) {            /* Source Symbolic */
-            source_offset = fetch(emu);
+            source_offset = fetch(cpu);
             source_vaddress = cpu->pc + source_offset - 2;
             source_value = read_memory_cb(source_vaddress, bw_flag);
             is_saddr_virtual = 1;
@@ -112,7 +111,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             sprintf(asm_operand, "0x%04X", source_vaddress);
         }
         else if (source == 2) {            /* Source Absolute */
-            source_offset = fetch(emu);
+            source_offset = fetch(cpu);
             source_vaddress = source_offset;
             source_value = read_memory_cb(source_vaddress, bw_flag);
             is_saddr_virtual = 1;
@@ -122,7 +121,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             sprintf(asm_operand, "&0x%04X", (uint16_t) source_offset);
         }
         else {                             /* Source Indexed */
-            source_offset = fetch(emu);
+            source_offset = fetch(cpu);
             source_vaddress = *reg + source_offset;
             source_value = read_memory_cb(source_vaddress, bw_flag);
             is_saddr_virtual = 1;
@@ -164,7 +163,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             sprintf(asm_operand, "#0x%04X", (uint16_t) source_value);
         }
         else if (source == 0) {            /* Source Immediate */
-            source_value = bogus_reg = fetch(emu);
+            source_value = bogus_reg = fetch(cpu);
             source_address = &bogus_reg;
             is_saddr_virtual = 0;
 
@@ -427,7 +426,7 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
         strncat(mnemonic, asm_operand, sizeof mnemonic);
         strncat(mnemonic, "\n", sizeof mnemonic);
 
-        if (emu->debugger->debug_mode){//disassemble && emu->debugger->debug_mode) {
+//        if (emu->debugger->debug_mode){//disassemble && emu->debugger->debug_mode) {
             int i;
             char one = 0, two = 0;
 
@@ -444,18 +443,13 @@ void decode_formatII(Emulator *emu, uint16_t instruction, bool disassemble)
             }
 
             printf("%s", hex_str);
-            //print_console(emu, hex_str);
 
             for (i = strlen(hex_str);i < 12;i++) {
                 printf(" ");
-                //print_console(emu, " ");
             }
 
             printf("\t%s", mnemonic);
-
-            //print_console(emu, "\t");
-            //print_console(emu, mnemonic);
-        }
+//        }
 
 //    } //# end else
 

@@ -20,11 +20,8 @@
 
 //##########+++ MSP430 Register initialization +++##########
 void
-initialize_msp_registers(Emulator *emu)
+initialize_msp_registers(Cpu *cpu)
  {
-  Cpu *cpu = emu->cpu;
-  Debugger *debugger = emu->debugger;
-
   cpu->running = false;
   cpu->cg2 = 0;
 
