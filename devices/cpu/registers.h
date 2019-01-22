@@ -18,6 +18,12 @@
 #define SR_SCG1         (1u<<7)     // System clock generator 1
 #define SR_FLAGS_MASK   (SR_C|SR_Z|SR_N|SR_V)
 
+// Register names
+#define REG_PC          0u
+#define REG_SP          1u
+#define REG_SR          2u
+
+
 // Main CPU structure //
 typedef struct Cpu {
   bool running;      /* CPU running or not */

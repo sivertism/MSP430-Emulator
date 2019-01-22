@@ -13,3 +13,12 @@
 #define     OP_BIS      0xD
 #define     OP_XOR      0xE
 #define     OP_AND      0xF
+
+/* ------ Format II Instructions ------ */
+#define     OP_RRC      0x0
+#define     OP_SWPB     0x1
+#define     OP_RRA      0x2
+#define     OP_SXT      0x3
+#define     OP_PUSH     0x4
+#define     OP_CALL     0x5
+#define     OP_RETI     0x6

@@ -27,6 +27,7 @@
 
 #include "formatII.h"
 #include "decoder.h"
+#include "opcodes.h"
 #include "../utilities.h"
 
 void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
@@ -47,7 +48,6 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
     uint8_t constant_generator_active = 0;    /* Specifies if CG1/CG2 active */
     int16_t immediate_constant = 0;           /* Generated Constant */
 
-    char mnemonic[100] = {0};
     /* String to show hex value of instruction */
     char hex_str[100] = {0};
     char hex_str_part[10] = {0};
@@ -103,21 +103,33 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
         else if (source == 0) {            /* Source Symbolic */
             source_offset = fetch(cpu);
             source_vaddress = cpu->pc + source_offset - 2;
-            source_value = read_memory_cb(source_vaddress, bw_flag);
+
+            if (opcode == OP_CALL) {
+                // Special case for CALL instrucition!
+                source_value = source_vaddress;
+            } else {
+                source_value = read_memory_cb(source_vaddress, bw_flag);
+            }
+
             is_saddr_virtual = 1;
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
-            strncat(hex_str, hex_str_part, sizeof hex_str);
+            strncat(hex_str, hex_str_part, sizeof hex_str_part);
             sprintf(asm_operand, "0x%04X", source_vaddress);
         }
         else if (source == 2) {            /* Source Absolute */
             source_offset = fetch(cpu);
             source_vaddress = source_offset;
-            source_value = read_memory_cb(source_vaddress, bw_flag);
+            if (opcode == OP_CALL) {
+                // Special case for CALL instrucition!
+                source_value = source_vaddress;
+            } else {
+                source_value = read_memory_cb(source_vaddress, bw_flag);
+            }
             is_saddr_virtual = 1;
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_value);
-            strncat(hex_str, hex_str_part, sizeof hex_str);
+            strncat(hex_str, hex_str_part, sizeof hex_str_part);
             sprintf(asm_operand, "&0x%04X", (uint16_t) source_offset);
         }
         else {                             /* Source Indexed */
@@ -127,7 +139,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
             is_saddr_virtual = 1;
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_offset);
-            strncat(hex_str, hex_str_part, sizeof hex_str);
+            strncat(hex_str, hex_str_part, sizeof hex_str_part);
             sprintf(asm_operand, "0x%04X(%s)", (uint16_t) source_offset, reg_name);
         }
     }
@@ -168,7 +180,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
             is_saddr_virtual = 0;
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_value);
-            strncat(hex_str, hex_str_part, sizeof hex_str);
+            strncat(hex_str, hex_str_part, sizeof hex_str_part);
 
             if (bw_flag == WORD) {
                 sprintf(asm_operand, "#0x%04X", (uint16_t) source_value);
@@ -350,6 +362,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
         case 0x5:{
             // Push PC
             cpu->sp -= 2;
+            consume_cycles_cb(1);
             write_memory_cb(cpu->sp, cpu->pc, WORD);
 
             // Jump
@@ -366,6 +379,8 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
             // 2 Pop PC from stack
             cpu->pc = read_memory_cb(cpu->sp, WORD);
             cpu->sp += 2;
+
+            consume_cycles_cb(2);
             break;
         }
         default: {
@@ -376,82 +391,79 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
         } //# End of Switch
     } //# end if
 
+#ifdef TRACE_INSTRUCTIONS
+    char mnemonic [100];
+    switch (opcode) {
+    case 0x0: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "RRC", sizeof mnemonic) :
+                    strncpy(mnemonic, "RRC.B", sizeof mnemonic);
 
-//    else {
-        switch (opcode) {
-        case 0x0: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "RRC", sizeof mnemonic) :
-                        strncpy(mnemonic, "RRC.B", sizeof mnemonic);
+        break;
+    }
+    case 0x1: {
+        strncpy(mnemonic, "SWPB", sizeof mnemonic);
+        break;
+    }
+    case 0x2: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "RRA", sizeof mnemonic) :
+                    strncpy(mnemonic, "RRA.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0x1: {
-            strncpy(mnemonic, "SWPB", sizeof mnemonic);
-            break;
-        }
-        case 0x2: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "RRA", sizeof mnemonic) :
-                        strncpy(mnemonic, "RRA.B", sizeof mnemonic);
+        break;
+    }
+    case 0x3: {
+        strncpy(mnemonic, "SXT", sizeof mnemonic);
+        break;
+    }
+    case 0x4: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "PUSH", sizeof mnemonic) :
+                    strncpy(mnemonic, "PUSH.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0x3: {
-            strncpy(mnemonic, "SXT", sizeof mnemonic);
-            break;
-        }
-        case 0x4: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "PUSH", sizeof mnemonic) :
-                        strncpy(mnemonic, "PUSH.B", sizeof mnemonic);
+        break;
+    }
+    case 0x5: {
+        strncpy(mnemonic, "CALL", sizeof mnemonic);
+        break;
+    }
+    case 0x6: {
+        strncpy(mnemonic, "RETI", sizeof mnemonic);
+        break;
+    }
+    default: {
+        printf("Unknown Single operand instruction.\n");
+    }
 
-            break;
-        }
-        case 0x5: {
-            strncpy(mnemonic, "CALL", sizeof mnemonic);
-            break;
-        }
-        case 0x6: {
-            strncpy(mnemonic, "RETI", sizeof mnemonic);
-            break;
-        }
-        default: {
-            printf("Unknown Single operand instruction.\n");
-        }
+    } //# End of Switch
 
-        } //# End of Switch
+    strncat(mnemonic, "\t", sizeof mnemonic);
+    strncat(mnemonic, asm_operand, sizeof mnemonic);
+    strncat(mnemonic, "\n", sizeof mnemonic);
 
-        strncat(mnemonic, "\t", sizeof mnemonic);
-        strncat(mnemonic, asm_operand, sizeof mnemonic);
-        strncat(mnemonic, "\n", sizeof mnemonic);
+    int i;
+    char one = 0, two = 0;
 
-//        if (emu->debugger->debug_mode){//disassemble && emu->debugger->debug_mode) {
-            int i;
-            char one = 0, two = 0;
+    // Make little endian big endian
+    for (i = 0;i < strlen(hex_str);i += 4) {
+        one = hex_str[i];
+        two = hex_str[i + 1];
 
-            // Make little endian big endian
-            for (i = 0;i < strlen(hex_str);i += 4) {
-                one = hex_str[i];
-                two = hex_str[i + 1];
+        hex_str[i] = hex_str[i + 2];
+        hex_str[i + 1] = hex_str[i + 3];
 
-                hex_str[i] = hex_str[i + 2];
-                hex_str[i + 1] = hex_str[i + 3];
+        hex_str[i + 2] = one;
+        hex_str[i + 3] = two;
+    }
 
-                hex_str[i + 2] = one;
-                hex_str[i + 3] = two;
-            }
+    printf("%s", hex_str);
 
-            printf("%s", hex_str);
+    for (i = strlen(hex_str);i < 12;i++) {
+        printf(" ");
+    }
 
-            for (i = strlen(hex_str);i < 12;i++) {
-                printf(" ");
-            }
-
-            printf("\t%s", mnemonic);
-//        }
-
-//    } //# end else
+    printf("\t%s", mnemonic);
+#endif // TRACE_INSTRUCTIONS
 
 }
 

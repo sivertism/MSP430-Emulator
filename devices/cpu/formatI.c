@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include "formatI.h"
+#include "decoder.h"
 #include "opcodes.h"
 
 void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
@@ -46,7 +47,6 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
 
     char s_reg_name[10], d_reg_name[10];
 
-    char mnemonic[100] = {0};
     /* String to show hex value of instruction */
     char hex_str[100] = {0};
     char hex_str_part[10] = {0};
@@ -79,7 +79,8 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
     int16_t dest_value;
     int16_t destination_offset;
     uint16_t *destination_addr;
-    char asm_operands[20] = {0}, asm_op2[20] = {0};
+    char asm_operands[40] = {0};
+    char asm_op2[20] = {0};
 
     /* Register - Register;     Ex: MOV Rs, Rd */
     /* Constant Gen - Register; Ex: MOV #C, Rd */ /* 0 */
@@ -93,6 +94,10 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
         else {                             /* Source register */
             source_value = *s_reg;
             sprintf(asm_operands, "%s, %s", s_reg_name, d_reg_name);
+        }
+
+        if (destination == REG_PC) {
+            consume_cycles_cb(constant_generator_active ? 1 : 2);
         }
 
         destination_addr = d_reg;          /* Destination Register */
@@ -111,7 +116,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
         destination_offset = fetch(cpu);
 
         sprintf(hex_str_part, "%04X", (uint16_t) destination_offset);
-        strncat(hex_str, hex_str_part, sizeof hex_str);
+        strncat(hex_str, hex_str_part, sizeof hex_str_part);
 
         if (constant_generator_active) {   /* Source Constant */
             source_value = immediate_constant;
@@ -196,6 +201,10 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
 
             sprintf(asm_operands, "0x%04X(%s), %s",
                     (uint16_t) source_offset, s_reg_name, d_reg_name);
+        }
+
+        if (destination == REG_PC) {
+            consume_cycles_cb(constant_generator_active ? 1 : 2);
         }
 
         destination_addr = d_reg;          /* Destination register */
@@ -302,6 +311,10 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
             sprintf(asm_operands, "@%s, %s", s_reg_name, d_reg_name);
         }
 
+        if (destination == REG_PC) {
+            consume_cycles_cb(constant_generator_active ? 1 : 2);
+        }
+
         destination_addr = d_reg;          /* Destination Register */
         dest_value = *d_reg;
         is_daddr_virtual = 0;
@@ -367,12 +380,15 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
         if (constant_generator_active) {   /* Source Constant */
             source_value = immediate_constant;
             is_saddr_virtual = 0;
+            consume_cycles_cb(1);
+
             sprintf(asm_operands, "#0x%04X, %s",
                     (uint16_t) source_value, d_reg_name);
         }
         else if (source == 0) {            /* Source Immediate */
             source_value = fetch(cpu);
             is_saddr_virtual = 0;
+            consume_cycles_cb(1);
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_value);
             strncat(hex_str, hex_str_part, sizeof hex_str);
@@ -391,6 +407,8 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
             is_saddr_virtual = 1;
             source_vaddress = *s_reg;
             source_value = read_memory_cb(source_vaddress, bw_flag);
+            consume_cycles_cb(2);
+
 
             sprintf(asm_operands, "@%s+, %s", s_reg_name, d_reg_name);
 
@@ -804,123 +822,125 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
 
 
     // DISASSEMBLY MODE
-//    else {
-        switch (opcode) {
-        case 0x4: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "MOV", sizeof mnemonic) :
-                        strncpy(mnemonic, "MOV.B", sizeof mnemonic);
+#ifdef TRACE_INSTRUCTIONS
+    char mnemonic [100];
+    switch (opcode) {
+    case 0x4: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "MOV", sizeof mnemonic) :
+                    strncpy(mnemonic, "MOV.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0x5: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "ADD", sizeof mnemonic) :
-                        strncpy(mnemonic, "ADD.B", sizeof mnemonic);
+        break;
+    }
+    case 0x5: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "ADD", sizeof mnemonic) :
+                    strncpy(mnemonic, "ADD.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0x6: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "ADDC", sizeof mnemonic) :
-                        strncpy(mnemonic, "ADDC.B", sizeof mnemonic);
+        break;
+    }
+    case 0x6: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "ADDC", sizeof mnemonic) :
+                    strncpy(mnemonic, "ADDC.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0x7: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "SUBC", sizeof mnemonic) :
-                        strncpy(mnemonic, "SUBC.B", sizeof mnemonic);
+        break;
+    }
+    case 0x7: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "SUBC", sizeof mnemonic) :
+                    strncpy(mnemonic, "SUBC.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0x8: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "SUB", sizeof mnemonic) :
-                        strncpy(mnemonic, "SUB.B", sizeof mnemonic);
+        break;
+    }
+    case 0x8: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "SUB", sizeof mnemonic) :
+                    strncpy(mnemonic, "SUB.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0x9: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "CMP", sizeof mnemonic) :
-                        strncpy(mnemonic, "CMP.B", sizeof mnemonic);
+        break;
+    }
+    case 0x9: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "CMP", sizeof mnemonic) :
+                    strncpy(mnemonic, "CMP.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0xA: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "DADD", sizeof mnemonic) :
-                        strncpy(mnemonic, "DADD.B", sizeof mnemonic);
+        break;
+    }
+    case 0xA: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "DADD", sizeof mnemonic) :
+                    strncpy(mnemonic, "DADD.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0xB: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "BIT", sizeof mnemonic) :
-                        strncpy(mnemonic, "BIT.B", sizeof mnemonic);
+        break;
+    }
+    case 0xB: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "BIT", sizeof mnemonic) :
+                    strncpy(mnemonic, "BIT.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0xC: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "BIC", sizeof mnemonic) :
-                        strncpy(mnemonic, "BIC.B", sizeof mnemonic);
+        break;
+    }
+    case 0xC: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "BIC", sizeof mnemonic) :
+                    strncpy(mnemonic, "BIC.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0xD: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "BIS", sizeof mnemonic) :
-                        strncpy(mnemonic, "BIS.B", sizeof mnemonic);
+        break;
+    }
+    case 0xD: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "BIS", sizeof mnemonic) :
+                    strncpy(mnemonic, "BIS.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0xE: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "XOR", sizeof mnemonic) :
-                        strncpy(mnemonic, "XOR.B", sizeof mnemonic);
+        break;
+    }
+    case 0xE: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "XOR", sizeof mnemonic) :
+                    strncpy(mnemonic, "XOR.B", sizeof mnemonic);
 
-            break;
-        }
-        case 0xF: {
-            bw_flag == WORD ?
-                        strncpy(mnemonic, "AND", sizeof mnemonic) :
-                        strncpy(mnemonic, "AND.B", sizeof mnemonic);
+        break;
+    }
+    case 0xF: {
+        bw_flag == WORD ?
+                    strncpy(mnemonic, "AND", sizeof mnemonic) :
+                    strncpy(mnemonic, "AND.B", sizeof mnemonic);
 
-            break;
-        }
+        break;
+    }
 
-        } //# End of switch
+    } //# End of switch
 
-        strncat(mnemonic, "\t", sizeof mnemonic);
-        strncat(mnemonic, asm_operands, sizeof mnemonic);
-        strncat(mnemonic, "\n", sizeof mnemonic);
+    strncat(mnemonic, "\t", sizeof mnemonic);
+    strncat(mnemonic, asm_operands, sizeof mnemonic);
+    strncat(mnemonic, "\n", sizeof mnemonic);
 
-//        if (emu->debugger->debug_mode){ //disassemble && emu->debugger->debug_mode) {
-            int i;
-            char one = 0, two = 0;
+    //        if (emu->debugger->debug_mode){ //disassemble && emu->debugger->debug_mode) {
+    int i;
+    char one = 0, two = 0;
 
-            // Make little endian big endian
-            for (i = 0;i < strlen(hex_str);i += 4) {
-                one = hex_str[i];
-                two = hex_str[i + 1];
+    // Make little endian big endian
+    for (i = 0;i < strlen(hex_str);i += 4) {
+        one = hex_str[i];
+        two = hex_str[i + 1];
 
-                hex_str[i] = hex_str[i + 2];
-                hex_str[i + 1] = hex_str[i + 3];
+        hex_str[i] = hex_str[i + 2];
+        hex_str[i + 1] = hex_str[i + 3];
 
-                hex_str[i + 2] = one;
-                hex_str[i + 3] = two;
-            }
+        hex_str[i + 2] = one;
+        hex_str[i + 3] = two;
+    }
 
-            printf("%s", hex_str);
+    printf("%s", hex_str);
 
-            for (i = strlen(hex_str);i < 12;i++) {
-                printf(" ");
-            }
+    for (i = strlen(hex_str);i < 12;i++) {
+        printf(" ");
+    }
 
-            printf("\t%s", mnemonic);
-//        }
+    printf("\t%s", mnemonic);
+#endif // TRACE_INSTRUCTIONS
+    //        }
 
-//    }
+    //    }
 }

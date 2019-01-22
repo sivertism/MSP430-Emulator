@@ -24,14 +24,15 @@
 #include <stdlib.h>
 
 #include "cpu/registers.h"
-//#include "memory/memspace.h"
 
 void reg_num_to_name(uint8_t source_reg, char *reg_name);
 int16_t *get_reg_ptr(Cpu *cpu, uint8_t reg);
-void set_write_memory_cb(void (*functionPtr)(uint16_t,uint16_t,uint8_t));
-void set_read_memory_cb(uint16_t (*functionPtr)(uint16_t,uint8_t));
+void set_write_memory_cb(void (*functionPtr)(uint16_t, uint16_t, uint8_t));
+void set_read_memory_cb(uint16_t (*functionPtr)(uint16_t, uint8_t));
+void set_consume_cycles_cb(void (*functionPtr)(uint16_t));
 
-extern void (*write_memory_cb)(uint16_t,uint16_t,uint8_t);
-extern uint16_t (*read_memory_cb)(uint16_t,uint8_t);
+extern void (*write_memory_cb)(uint16_t, uint16_t, uint8_t);
+extern uint16_t (*read_memory_cb)(uint16_t, uint8_t);
+extern void (*consume_cycles_cb)(uint16_t);
 
 #endif

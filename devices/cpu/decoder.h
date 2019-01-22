@@ -45,4 +45,6 @@ enum {
   DISASSEMBLE,
 };
 
+#define TRACE_INSTRUCTIONS
+
 #endif

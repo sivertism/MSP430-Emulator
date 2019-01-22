@@ -38,7 +38,6 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, bool disassemble)
 
     char value[20];
 
-    char mnemonic[100] = {0};
     /* String to show hex value of instruction */
     char hex_str[100] = {0};
 
@@ -151,92 +150,86 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, bool disassemble)
         } //# End of Switch
     } //# end if
 
+#ifdef TRACE_INSTRUCTIONS
+    char mnemonic [100];
+    switch(condition){
 
-//    else { // disassemle
-        switch(condition){
+    case 0x0:{
+        sprintf(mnemonic, "JNZ");
+        sprintf(value, "0x%04X", cpu->pc + signed_offset);
+        break;
+    }
+    case 0x1:{
+        sprintf(mnemonic, "JZ");
+        sprintf(value, "0x%04X", cpu->pc + signed_offset);
+        break;
+    }
+    case 0x2:{
+        sprintf(mnemonic, "JNC");
+        sprintf(value, "0x%04X", cpu->pc + signed_offset);
+        break;
+    }
+    case 0x3:{
+        sprintf(mnemonic, "JC");
+        sprintf(value, "0x%04X", cpu->pc + signed_offset);
+        break;
+    }
+    case 0x4:{
+        sprintf(mnemonic, "JN");
+        sprintf(value, "0x%04X", cpu->pc + signed_offset);
+        break;
+    }
+    case 0x5:{
+        sprintf(mnemonic, "JGE");
+        sprintf(value, "0x%04X", cpu->pc + signed_offset);
 
-        case 0x0:{
-            sprintf(mnemonic, "JNZ");
-            sprintf(value, "0x%04X", cpu->pc + signed_offset);
-            break;
-        }
-        case 0x1:{
-            sprintf(mnemonic, "JZ");
-            sprintf(value, "0x%04X", cpu->pc + signed_offset);
-            break;
-        }
-        case 0x2:{
-            sprintf(mnemonic, "JNC");
-            sprintf(value, "0x%04X", cpu->pc + signed_offset);
-            break;
-        }
-        case 0x3:{
-            sprintf(mnemonic, "JC");
-            sprintf(value, "0x%04X", cpu->pc + signed_offset);
-            break;
-        }
-        case 0x4:{
-            sprintf(mnemonic, "JN");
-            sprintf(value, "0x%04X", cpu->pc + signed_offset);
-            break;
-        }
-        case 0x5:{
-            sprintf(mnemonic, "JGE");
-            sprintf(value, "0x%04X", cpu->pc + signed_offset);
+        break;
+    }
+    case 0x6:{
+        sprintf(mnemonic, "JL");
+        sprintf(value, "0x%04X", cpu->pc + signed_offset);
 
-            break;
-        }
-        case 0x6:{
-            sprintf(mnemonic, "JL");
-            sprintf(value, "0x%04X", cpu->pc + signed_offset);
+        break;
+    }
+    case 0x7:{
+        sprintf(mnemonic, "JMP");
+        sprintf(value, "0x%04X", cpu->pc + signed_offset);
+        break;
+    }
+    default:{
+        puts("Undefined Jump operation!\n");
+        return;
+    }
 
-            break;
-        }
-        case 0x7:{
-            sprintf(mnemonic, "JMP");
-            sprintf(value, "0x%04X", cpu->pc + signed_offset);
-            break;
-        }
-        default:{
-            puts("Undefined Jump operation!\n");
-            return;
-        }
+    } //# End of Switch
 
-        } //# End of Switch
+    strncat(mnemonic, "\t", sizeof(mnemonic));
+    strncat(mnemonic, value, sizeof(mnemonic));
+    strncat(mnemonic, "\n", sizeof(mnemonic));
 
-        strncat(mnemonic, "\t", sizeof(mnemonic));
-        strncat(mnemonic, value, sizeof(mnemonic));
-        strncat(mnemonic, "\n", sizeof(mnemonic));
+    int i;
+    char one = 0, two = 0;
 
-//        if (emu->debugger->debug_mode){//disassemble && emu->debugger->debug_mode) {
-            int i;
-            char one = 0, two = 0;
+    // Make little endian big endian
+    for (i = 0;i < strlen(hex_str);i += 4) {
+        one = hex_str[i];
+        two = hex_str[i + 1];
 
-            // Make little endian big endian
-            for (i = 0;i < strlen(hex_str);i += 4) {
-                one = hex_str[i];
-                two = hex_str[i + 1];
+        hex_str[i] = hex_str[i + 2];
+        hex_str[i + 1] = hex_str[i + 3];
 
-                hex_str[i] = hex_str[i + 2];
-                hex_str[i + 1] = hex_str[i + 3];
+        hex_str[i + 2] = one;
+        hex_str[i + 3] = two;
+    }
 
-                hex_str[i + 2] = one;
-                hex_str[i + 3] = two;
-            }
+    printf("%s", hex_str);
+    //print_console(emu, hex_str);
 
-            printf("%s", hex_str);
-            //print_console(emu, hex_str);
+    for (i = strlen(hex_str);i < 12;i++) {
+        printf(" ");
+        //print_console(emu, " ");
+    }
 
-            for (i = strlen(hex_str);i < 12;i++) {
-                printf(" ");
-                //print_console(emu, " ");
-            }
-
-            printf("\t%s", mnemonic);
-
-            //print_console(emu, "\t");
-            //print_console(emu, mnemonic);
-//        }
-
-//    }
+    printf("\t%s", mnemonic);
+#endif // TRACE_INSTRUCTIONS
 }
