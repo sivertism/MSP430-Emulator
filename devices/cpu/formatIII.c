@@ -26,7 +26,7 @@
 
 #include "decoder.h"
 
-void decode_formatIII(Cpu *cpu, uint16_t instruction, bool disassemble)
+void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
 {
     uint8_t condition = (instruction & 0x1C00) >> 10;
     int16_t signed_offset = (instruction & 0x03FF) * 2;
@@ -43,193 +43,164 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, bool disassemble)
 
     sprintf(hex_str, "%04X", instruction);
 
-    if (!disassemble) {
-        switch(condition){
+    switch(condition){
 
-         /* JNE/JNZ Jump if not equal/zero
+    /* JNE/JNZ Jump if not equal/zero
           *
           * If Z = 0: PC + 2 offset → PC
           * If Z = 1: execute following instruction
           */
-        case 0x0:{
-            if (get_zero_flag(cpu) == false) {
-                cpu->pc += signed_offset;
-            }
-            break;
+    case 0x0:{
+        if (get_zero_flag(cpu) == false) {
+            cpu->pc += signed_offset;
         }
+        break;
+    }
 
-            /* JEQ/JZ Jump is equal/zero
+        /* JEQ/JZ Jump is equal/zero
    * If Z = 1: PC + 2 offset → PC
    * If Z = 0: execute following instruction
   */
-        case 0x1:{
-            if (get_zero_flag(cpu) == true) {
-                cpu->pc += signed_offset;
-            }
-            break;
+    case 0x1:{
+        if (get_zero_flag(cpu) == true) {
+            cpu->pc += signed_offset;
         }
+        break;
+    }
 
-            /* JNC/JLO Jump if no carry/lower
+        /* JNC/JLO Jump if no carry/lower
   *
   *  if C = 0: PC + 2 offset → PC
   *  if C = 1: execute following instruction
   */
-        case 0x2:{
-            if (get_carry(cpu) == false) {
-                cpu->pc += signed_offset;
-            }
-            break;
+    case 0x2:{
+        if (get_carry(cpu) == false) {
+            cpu->pc += signed_offset;
         }
+        break;
+    }
 
-            /* JC/JHS Jump if carry/higher or same
+        /* JC/JHS Jump if carry/higher or same
   *
   * If C = 1: PC + 2 offset → PC
   * If C = 0: execute following instruction
   */
-        case 0x3:{
-            if (get_carry(cpu) == true) {
-                cpu->pc += signed_offset;
-            }
-            break;
+    case 0x3:{
+        if (get_carry(cpu) == true) {
+            cpu->pc += signed_offset;
         }
+        break;
+    }
 
-            /* JN Jump if negative
+        /* JN Jump if negative
   *
   *  if N = 1: PC + 2 ×offset → PC
   *  if N = 0: execute following instruction
   */
-        case 0x4:{
-            if (get_negative_flag(cpu) == true) {
-                cpu->pc += signed_offset;
-            }
-
-            break;
+    case 0x4:{
+        if (get_negative_flag(cpu) == true) {
+            cpu->pc += signed_offset;
         }
 
-            /* JGE Jump if greater or equal (N == V)
+        break;
+    }
+
+        /* JGE Jump if greater or equal (N == V)
   *
   *  If (N .XOR. V) = 0 then jump to label: PC + 2 P offset → PC
   *  If (N .XOR. V) = 1 then execute the following instruction
   */
-        case 0x5:{
-            if ((get_negative_flag(cpu) ^ get_overflow_flag(cpu)) == false) {
-                cpu->pc += signed_offset;
-            }
-
-            break;
+    case 0x5:{
+        if ((get_negative_flag(cpu) ^ get_overflow_flag(cpu)) == false) {
+            cpu->pc += signed_offset;
         }
 
-            /* JL Jump if less (N != V)
+        break;
+    }
+
+        /* JL Jump if less (N != V)
   *
   *  If (N .XOR. V) = 1 then jump to label: PC + 2 offset → PC
   *  If (N .XOR. V) = 0 then execute following instruction
   */
-        case 0x6:{
-            if ((get_negative_flag(cpu) ^ get_overflow_flag(cpu)) == true) {
-                cpu->pc += signed_offset;
-            }
-
-            break;
+    case 0x6:{
+        if ((get_negative_flag(cpu) ^ get_overflow_flag(cpu)) == true) {
+            cpu->pc += signed_offset;
         }
 
-            /* JMP Jump Unconditionally
+        break;
+    }
+
+        /* JMP Jump Unconditionally
    *
    *  PC + 2 × offset → PC
    *
    */
-        case 0x7:{
-            cpu->pc += signed_offset;
-            break;
-        }
-
-        default: {
-            fprintf(stderr, "INVALID FORMAT III OPCODE, EXITING.");
-            exit(1);
-        }
-
-        } //# End of Switch
-    } //# end if
-
-#ifdef TRACE_INSTRUCTIONS
-    char mnemonic [100];
-    switch(condition){
-
-    case 0x0:{
-        sprintf(mnemonic, "JNZ");
-        sprintf(value, "0x%04X", cpu->pc + signed_offset);
-        break;
-    }
-    case 0x1:{
-        sprintf(mnemonic, "JZ");
-        sprintf(value, "0x%04X", cpu->pc + signed_offset);
-        break;
-    }
-    case 0x2:{
-        sprintf(mnemonic, "JNC");
-        sprintf(value, "0x%04X", cpu->pc + signed_offset);
-        break;
-    }
-    case 0x3:{
-        sprintf(mnemonic, "JC");
-        sprintf(value, "0x%04X", cpu->pc + signed_offset);
-        break;
-    }
-    case 0x4:{
-        sprintf(mnemonic, "JN");
-        sprintf(value, "0x%04X", cpu->pc + signed_offset);
-        break;
-    }
-    case 0x5:{
-        sprintf(mnemonic, "JGE");
-        sprintf(value, "0x%04X", cpu->pc + signed_offset);
-
-        break;
-    }
-    case 0x6:{
-        sprintf(mnemonic, "JL");
-        sprintf(value, "0x%04X", cpu->pc + signed_offset);
-
-        break;
-    }
     case 0x7:{
-        sprintf(mnemonic, "JMP");
-        sprintf(value, "0x%04X", cpu->pc + signed_offset);
+        cpu->pc += signed_offset;
         break;
     }
-    default:{
-        puts("Undefined Jump operation!\n");
-        return;
+
+    default: {
+        fprintf(stderr, "INVALID FORMAT III OPCODE, EXITING.");
+        exit(1);
     }
 
     } //# End of Switch
 
-    strncat(mnemonic, "\t", sizeof(mnemonic));
-    strncat(mnemonic, value, sizeof(mnemonic));
-    strncat(mnemonic, "\n", sizeof(mnemonic));
+    if (disas != NULL) {
+        switch(condition){
 
-    int i;
-    char one = 0, two = 0;
+        case 0x0:{
+            sprintf(disas, "JNZ");
+            sprintf(value, "0x%04X", cpu->pc + signed_offset);
+            break;
+        }
+        case 0x1:{
+            sprintf(disas, "JZ");
+            sprintf(value, "0x%04X", cpu->pc + signed_offset);
+            break;
+        }
+        case 0x2:{
+            sprintf(disas, "JNC");
+            sprintf(value, "0x%04X", cpu->pc + signed_offset);
+            break;
+        }
+        case 0x3:{
+            sprintf(disas, "JC");
+            sprintf(value, "0x%04X", cpu->pc + signed_offset);
+            break;
+        }
+        case 0x4:{
+            sprintf(disas, "JN");
+            sprintf(value, "0x%04X", cpu->pc + signed_offset);
+            break;
+        }
+        case 0x5:{
+            sprintf(disas, "JGE");
+            sprintf(value, "0x%04X", cpu->pc + signed_offset);
 
-    // Make little endian big endian
-    for (i = 0;i < strlen(hex_str);i += 4) {
-        one = hex_str[i];
-        two = hex_str[i + 1];
+            break;
+        }
+        case 0x6:{
+            sprintf(disas, "JL");
+            sprintf(value, "0x%04X", cpu->pc + signed_offset);
 
-        hex_str[i] = hex_str[i + 2];
-        hex_str[i + 1] = hex_str[i + 3];
+            break;
+        }
+        case 0x7:{
+            sprintf(disas, "JMP");
+            sprintf(value, "0x%04X", cpu->pc + signed_offset);
+            break;
+        }
+        default:{
+            puts("Undefined Jump operation!\n");
+            return;
+        }
 
-        hex_str[i + 2] = one;
-        hex_str[i + 3] = two;
+        } //# End of Switch
+
+        strncat(disas, " ", sizeof(disas));
+        strncat(disas, value, sizeof(disas));
     }
-
-    printf("%s", hex_str);
-    //print_console(emu, hex_str);
-
-    for (i = strlen(hex_str);i < 12;i++) {
-        printf(" ");
-        //print_console(emu, " ");
-    }
-
-    printf("\t%s", mnemonic);
-#endif // TRACE_INSTRUCTIONS
 }

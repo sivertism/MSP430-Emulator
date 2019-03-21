@@ -31,7 +31,7 @@
 
 int16_t run_constant_generator(uint8_t source, uint8_t as_flag);
 
-void decode(Cpu *cpu, uint16_t instruction, bool disassemble);
+void decode(Cpu *cpu, uint16_t instruction, char *disas);
 
 uint16_t fetch(Cpu *cpu);
 
@@ -39,12 +39,4 @@ enum {
   WORD, 
   BYTE 
 };
-
-enum {
-  EXECUTE = 0,
-  DISASSEMBLE,
-};
-
-#define TRACE_INSTRUCTIONS
-
 #endif

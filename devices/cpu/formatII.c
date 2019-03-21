@@ -30,7 +30,7 @@
 #include "opcodes.h"
 #include "../utilities.h"
 
-void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
+void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
 {
     int is_saddr_virtual=0;   /// Indicate if source source address is virtual
 
@@ -201,11 +201,10 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
     }
 
 
-    if (!disassemble) { // EXECUTE
-        int16_t result;
-        switch (opcode) {
-        
-        /*  RRC Rotate right through carry
+    int16_t result;
+    switch (opcode) {
+
+    /*  RRC Rotate right through carry
        *    C → MSB → MSB-1 .... LSB+1 → LSB → C
        *
        *  Description The destination operand is shifted right one position
@@ -217,61 +216,61 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
        * C: Loaded from the LSB
        * V: Reset
        */
-        case 0x0:{
-            uint16_t CF = get_carry(cpu);
-            bool c, z, n, v;
+    case 0x0:{
+        uint16_t CF = get_carry(cpu);
+        bool c, z, n, v;
 
-            result = source_value;
-            result >>= 1;
+        result = source_value;
+        result >>= 1;
 
-            if (bw_flag == WORD) {
-                result &= ~(1u<<15);        // Clear MSB
-                result |= (CF << 15);       // Insert carry on MSB
+        if (bw_flag == WORD) {
+            result &= ~(1u<<15);        // Clear MSB
+            result |= (CF << 15);       // Insert carry on MSB
 
-            } else if (bw_flag == BYTE){
-                result &= ~(1u << 7);       // Clear MSB
-                result |= (CF << 7);        // Insert carry on MSB
-            }
-
-            if (is_saddr_virtual){  // Write result to memory
-                write_memory_cb(source_vaddress, result, bw_flag);
-            } else {                // Write result to register
-                *source_address = bw_flag ? result & 0xFF : result;
-            }
-
-            // Make sure only relevant part of
-
-            c = source_value & 1u; // set next c from LSB
-            n = CF; // Previous CF is now MSB
-            z = is_zero(result, bw_flag);
-            v = false;
-            set_sr_flags(cpu, c, z, n, v);
-
-            break;
+        } else if (bw_flag == BYTE){
+            result &= ~(1u << 7);       // Clear MSB
+            result |= (CF << 7);        // Insert carry on MSB
         }
 
-       /* SWPB Swap bytes
+        if (is_saddr_virtual){  // Write result to memory
+            write_memory_cb(source_vaddress, result, bw_flag);
+        } else {                // Write result to register
+            *source_address = bw_flag ? result & 0xFF : result;
+        }
+
+        // Make sure only relevant part of
+
+        c = source_value & 1u; // set next c from LSB
+        n = CF; // Previous CF is now MSB
+        z = is_zero(result, bw_flag);
+        v = false;
+        set_sr_flags(cpu, c, z, n, v);
+
+        break;
+    }
+
+        /* SWPB Swap bytes
         * bw flag always 0 (word)
         * Bits 15 to 8 ↔ bits 7 to 0
         * No flags affected
         */
-        case 0x1:{
-            uint16_t upper, lower;
+    case 0x1:{
+        uint16_t upper, lower;
 
-            upper = (source_value & 0xFF00);
-            lower = (source_value & 0x00FF);
-            result = (lower << 8) | (upper >> 8);
+        upper = (source_value & 0xFF00);
+        lower = (source_value & 0x00FF);
+        result = (lower << 8) | (upper >> 8);
 
-            if (is_saddr_virtual){  // Write result to memory
-                write_memory_cb(source_vaddress, result, WORD);
-            } else {                // Write result to register
-                *source_address = result;
-            }
-
-            break;
+        if (is_saddr_virtual){  // Write result to memory
+            write_memory_cb(source_vaddress, result, WORD);
+        } else {                // Write result to register
+            *source_address = result;
         }
 
-            /* RRA Rotate right arithmetic
+        break;
+    }
+
+        /* RRA Rotate right arithmetic
        *   MSB → MSB, MSB → MSB-1, ... LSB+1 → LSB, LSB → C
        *
        * N: Set if result is negative, reset if positive
@@ -279,34 +278,34 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
        * C: Loaded from the LSB
        * V: Reset
        */
-        case 0x2:{
+    case 0x2:{
 
-            bool c, z, n, v;
+        bool c, z, n, v;
 
-            if (bw_flag == WORD){
-                result = (source_value & (1<<15)) | // MSB
-                        (source_value >> 1);
-            } else if (bw_flag==BYTE){
-                result = (source_value & (1<<7)) | // MSB
-                        (source_value >> 1);
-            }
-
-            if (is_saddr_virtual){  // Write result to memory
-                write_memory_cb(source_vaddress, result, bw_flag);
-            } else {                // Write result to register
-                *source_address = bw_flag ? result & 0xFF : result;
-            }
-
-            c = source_value & 1;
-            v = false;
-            n = is_negative(result, bw_flag);
-            z = is_zero(result, bw_flag);
-            set_sr_flags(cpu, c, z, n, v);
-
-            break;
+        if (bw_flag == WORD){
+            result = (source_value & (1<<15)) | // MSB
+                    (source_value >> 1);
+        } else if (bw_flag==BYTE){
+            result = (source_value & (1<<7)) | // MSB
+                    (source_value >> 1);
         }
 
-            /* SXT Sign extend byte to word
+        if (is_saddr_virtual){  // Write result to memory
+            write_memory_cb(source_vaddress, result, bw_flag);
+        } else {                // Write result to register
+            *source_address = bw_flag ? result & 0xFF : result;
+        }
+
+        c = source_value & 1;
+        v = false;
+        n = is_negative(result, bw_flag);
+        z = is_zero(result, bw_flag);
+        set_sr_flags(cpu, c, z, n, v);
+
+        break;
+    }
+
+        /* SXT Sign extend byte to word
        *   bw flag always 0 (word)
        *
        * Bit 7 → Bit 8 ......... Bit 15
@@ -317,153 +316,127 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, bool disassemble)
        * V: Reset
        */
 
-        case 0x3:{
-            result = source_value & (1<<7) ? source_value | 0xFF00 :
-                                             source_value & 0x00FF;
+    case 0x3:{
+        result = source_value & (1<<7) ? source_value | 0xFF00 :
+                                         source_value & 0x00FF;
 
-            if (is_saddr_virtual){  // Write result to memory
-                write_memory_cb(source_vaddress, result, WORD);
-            } else {                // Write result to register
-                *source_address = result;
-            }
-
-            bool c, z, n, v;
-            z = is_zero(result, bw_flag);
-            n = is_negative(result, bw_flag);
-            c = !z;
-            v = false;
-            set_sr_flags(cpu, c, z, n, v);
-
-            break;
+        if (is_saddr_virtual){  // Write result to memory
+            write_memory_cb(source_vaddress, result, WORD);
+        } else {                // Write result to register
+            *source_address = result;
         }
 
-            /* PUSH push value on to the stack
+        bool c, z, n, v;
+        z = is_zero(result, bw_flag);
+        n = is_negative(result, bw_flag);
+        c = !z;
+        v = false;
+        set_sr_flags(cpu, c, z, n, v);
+
+        break;
+    }
+
+        /* PUSH push value on to the stack
        *
        *   SP - 2 → SP
        *   src → @SP
        *
        */
-        case 0x4:{
+    case 0x4:{
 
-            cpu->sp -= 2; /* Yes, even for BYTE Instructions */
+        cpu->sp -= 2; /* Yes, even for BYTE Instructions */
 
-            // Write result to memory
-            write_memory_cb(cpu->sp , source_value, bw_flag);
+        // Write result to memory
+        write_memory_cb(cpu->sp , source_value, bw_flag);
 
-            break;
-        }
+        break;
+    }
 
-            /* CALL SUBROUTINE:
+        /* CALL SUBROUTINE:
        *     PUSH PC and PC = SRC
        *
        *     This is always a word instruction. Supporting all addressing modes
        */
 
-        case 0x5:{
-            // Push PC
-            cpu->sp -= 2;
-            consume_cycles_cb(1);
-            write_memory_cb(cpu->sp, cpu->pc, WORD);
+    case 0x5:{
+        // Push PC
+        cpu->sp -= 2;
+        consume_cycles_cb(1);
+        write_memory_cb(cpu->sp, cpu->pc, WORD);
 
-            // Jump
-            cpu->pc = source_value;
-            break;
-        }
-
-            //# RETI Return from interrupt: Pop SR then pop PC
-        case 0x6:{
-            // 1 Pop SR from the stack
-            cpu->sr = read_memory_cb(cpu->sp, WORD);
-            cpu->sp += 2;
-
-            // 2 Pop PC from stack
-            cpu->pc = read_memory_cb(cpu->sp, WORD);
-            cpu->sp += 2;
-
-            consume_cycles_cb(2);
-            break;
-        }
-        default: {
-            fprintf(stderr, "INVALID FORMAT II OPCODE, EXITING.");
-            exit(1);
-        }
-
-        } //# End of Switch
-    } //# end if
-
-#ifdef TRACE_INSTRUCTIONS
-    char mnemonic [100];
-    switch (opcode) {
-    case 0x0: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "RRC", sizeof mnemonic) :
-                    strncpy(mnemonic, "RRC.B", sizeof mnemonic);
-
+        // Jump
+        cpu->pc = source_value;
         break;
     }
-    case 0x1: {
-        strncpy(mnemonic, "SWPB", sizeof mnemonic);
-        break;
-    }
-    case 0x2: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "RRA", sizeof mnemonic) :
-                    strncpy(mnemonic, "RRA.B", sizeof mnemonic);
 
-        break;
-    }
-    case 0x3: {
-        strncpy(mnemonic, "SXT", sizeof mnemonic);
-        break;
-    }
-    case 0x4: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "PUSH", sizeof mnemonic) :
-                    strncpy(mnemonic, "PUSH.B", sizeof mnemonic);
+        //# RETI Return from interrupt: Pop SR then pop PC
+    case 0x6:{
+        // 1 Pop SR from the stack
+        cpu->sr = read_memory_cb(cpu->sp, WORD);
+        cpu->sp += 2;
 
-        break;
-    }
-    case 0x5: {
-        strncpy(mnemonic, "CALL", sizeof mnemonic);
-        break;
-    }
-    case 0x6: {
-        strncpy(mnemonic, "RETI", sizeof mnemonic);
+        // 2 Pop PC from stack
+        cpu->pc = read_memory_cb(cpu->sp, WORD);
+        cpu->sp += 2;
+
+        consume_cycles_cb(2);
         break;
     }
     default: {
-        printf("Unknown Single operand instruction.\n");
+        fprintf(stderr, "INVALID FORMAT II OPCODE, EXITING.");
+        exit(1);
     }
 
     } //# End of Switch
 
-    strncat(mnemonic, "\t", sizeof mnemonic);
-    strncat(mnemonic, asm_operand, sizeof mnemonic);
-    strncat(mnemonic, "\n", sizeof mnemonic);
+    if (disas != NULL) {
+        switch (opcode) {
+        case 0x0: {
+            bw_flag == WORD ?
+                        strncpy(disas, "RRC", sizeof disas) :
+                        strncpy(disas, "RRC.B", sizeof disas);
 
-    int i;
-    char one = 0, two = 0;
+            break;
+        }
+        case 0x1: {
+            strncpy(disas, "SWPB", sizeof disas);
+            break;
+        }
+        case 0x2: {
+            bw_flag == WORD ?
+                        strncpy(disas, "RRA", sizeof disas) :
+                        strncpy(disas, "RRA.B", sizeof disas);
 
-    // Make little endian big endian
-    for (i = 0;i < strlen(hex_str);i += 4) {
-        one = hex_str[i];
-        two = hex_str[i + 1];
+            break;
+        }
+        case 0x3: {
+            strncpy(disas, "SXT", sizeof disas);
+            break;
+        }
+        case 0x4: {
+            bw_flag == WORD ?
+                        strncpy(disas, "PUSH", sizeof disas) :
+                        strncpy(disas, "PUSH.B", sizeof disas);
 
-        hex_str[i] = hex_str[i + 2];
-        hex_str[i + 1] = hex_str[i + 3];
+            break;
+        }
+        case 0x5: {
+            strncpy(disas, "CALL", sizeof disas);
+            break;
+        }
+        case 0x6: {
+            strncpy(disas, "RETI", sizeof disas);
+            break;
+        }
+        default: {
+            printf("Unknown Single operand instruction.\n");
+        }
 
-        hex_str[i + 2] = one;
-        hex_str[i + 3] = two;
+        } //# End of Switch
+
+        strncat(disas, " ", sizeof disas);
+        strncat(disas, asm_operand, sizeof disas);
     }
-
-    printf("%s", hex_str);
-
-    for (i = strlen(hex_str);i < 12;i++) {
-        printf(" ");
-    }
-
-    printf("\t%s", mnemonic);
-#endif // TRACE_INSTRUCTIONS
 
 }
 

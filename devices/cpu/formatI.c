@@ -31,7 +31,7 @@
 #include "decoder.h"
 #include "opcodes.h"
 
-void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
+void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
 {
     int is_saddr_virtual;
     int is_daddr_virtual;
@@ -484,11 +484,10 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
     }
 
 
-    if (!disassemble) {
-        int16_t result;
-        switch (opcode) {
+    int16_t result;
+    switch (opcode) {
 
-        /* MOV SOURCE, DESTINATION
+    /* MOV SOURCE, DESTINATION
        *   Ex: MOV #4, R6
        *
        * SOURCE = DESTINATION
@@ -497,20 +496,20 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
        * not affected. The previous contents of the destination are lost.
        *
        */
-        case 0x4: {
+    case 0x4: {
 
-            result = bw_flag ? source_value & 0xFF : source_value;
+        result = bw_flag ? source_value & 0xFF : source_value;
 
-            if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag);
-            } else {
-                *destination_addr = result;
-            }
-
-            break;
+        if (is_daddr_virtual){
+            write_memory_cb(dest_vaddress, result, bw_flag);
+        } else {
+            *destination_addr = result;
         }
 
-            /* ADD SOURCE, DESTINATION
+        break;
+    }
+
+        /* ADD SOURCE, DESTINATION
        *   Ex: ADD R5, R4
        *
        * The source operand is added to the destination operand. The source op
@@ -524,31 +523,31 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
        * V: Set if an arithmetic overflow occurs, otherwise reset
        *
        */
-        case 0x5:{
+    case 0x5:{
 
-            if (bw_flag) {
-                dest_value = truncate_byte(dest_value);
-                source_value = truncate_byte(source_value);
-            }
-
-            result = dest_value + source_value;
-
-            if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag);
-            } else {
-                *destination_addr = result;
-            }
-
-            bool c, z, n, v;
-            z = is_zero(result, bw_flag);
-            n = is_negative(result, bw_flag);
-            c = is_add_carry(dest_value, source_value, 0, bw_flag);
-            v = is_add_overflow(dest_value, source_value, 0, bw_flag);
-            set_sr_flags(cpu, c, z, n, v);
-            break;
+        if (bw_flag) {
+            dest_value = truncate_byte(dest_value);
+            source_value = truncate_byte(source_value);
         }
 
-            /* ADDC SOURCE, DESTINATION
+        result = dest_value + source_value;
+
+        if (is_daddr_virtual){
+            write_memory_cb(dest_vaddress, result, bw_flag);
+        } else {
+            *destination_addr = result;
+        }
+
+        bool c, z, n, v;
+        z = is_zero(result, bw_flag);
+        n = is_negative(result, bw_flag);
+        c = is_add_carry(dest_value, source_value, 0, bw_flag);
+        v = is_add_overflow(dest_value, source_value, 0, bw_flag);
+        set_sr_flags(cpu, c, z, n, v);
+        break;
+    }
+
+        /* ADDC SOURCE, DESTINATION
        *   Ex: ADDC R5, R4
        *
        * DESTINATION += (SOURCE + C)
@@ -559,34 +558,34 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
        * V: Set if an arithmetic overflow occurs, otherwise reset
        *
        */
-        case 0x6:{
+    case 0x6:{
 
-            if (bw_flag) {
-                dest_value = truncate_byte(dest_value);
-                source_value = truncate_byte(source_value);
-            }
-
-            result = source_value + dest_value + get_carry(cpu);
-
-            if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag);
-            } else {
-                *destination_addr = bw_flag ? result & 0xFF : result;
-            }
-
-            bool c, z, n, v;
-            z = is_zero(result, bw_flag);
-            n = is_negative(result, bw_flag);
-            c = is_add_carry(
-                        dest_value, source_value, get_carry(cpu), bw_flag);
-            v = is_add_overflow(
-                        dest_value, source_value, get_carry(cpu), bw_flag);
-            set_sr_flags(cpu, c, z, n, v);
-
-            break;
+        if (bw_flag) {
+            dest_value = truncate_byte(dest_value);
+            source_value = truncate_byte(source_value);
         }
 
-       /* SUBC SOURCE, DESTINATION
+        result = source_value + dest_value + get_carry(cpu);
+
+        if (is_daddr_virtual){
+            write_memory_cb(dest_vaddress, result, bw_flag);
+        } else {
+            *destination_addr = bw_flag ? result & 0xFF : result;
+        }
+
+        bool c, z, n, v;
+        z = is_zero(result, bw_flag);
+        n = is_negative(result, bw_flag);
+        c = is_add_carry(
+                    dest_value, source_value, get_carry(cpu), bw_flag);
+        v = is_add_overflow(
+                    dest_value, source_value, get_carry(cpu), bw_flag);
+        set_sr_flags(cpu, c, z, n, v);
+
+        break;
+    }
+
+        /* SUBC SOURCE, DESTINATION
        *   Ex: SUB R4, R5
        *
        *   DST += ~SRC + C
@@ -599,33 +598,33 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
        *
        *
        */
-        case 0x7:{
+    case 0x7:{
 
-            if (bw_flag) {
-                dest_value = truncate_byte(dest_value);
-                source_value = truncate_byte(source_value);
-            }
-
-            result = dest_value - (source_value - 1) + get_carry(cpu);
-
-            if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag);
-            } else {
-                *destination_addr = bw_flag ? result & 0xFF : result;
-            }
-
-            bool c, z, n, v;
-            z = is_zero(result, bw_flag);
-            n = is_negative(result, bw_flag);
-            c = is_sub_carry(
-                        dest_value, source_value, get_carry(cpu));
-            v = is_sub_overflow(
-                        dest_value, source_value, get_carry(cpu), bw_flag);
-            set_sr_flags(cpu, c, z, n, v);
-            break;
+        if (bw_flag) {
+            dest_value = truncate_byte(dest_value);
+            source_value = truncate_byte(source_value);
         }
 
-            /* SUB SOURCE, DESTINATION
+        result = dest_value - (source_value - 1) + get_carry(cpu);
+
+        if (is_daddr_virtual){
+            write_memory_cb(dest_vaddress, result, bw_flag);
+        } else {
+            *destination_addr = bw_flag ? result & 0xFF : result;
+        }
+
+        bool c, z, n, v;
+        z = is_zero(result, bw_flag);
+        n = is_negative(result, bw_flag);
+        c = is_sub_carry(
+                    dest_value, source_value, get_carry(cpu));
+        v = is_sub_overflow(
+                    dest_value, source_value, get_carry(cpu), bw_flag);
+        set_sr_flags(cpu, c, z, n, v);
+        break;
+    }
+
+        /* SUB SOURCE, DESTINATION
        *   Ex: SUB R4, R5
        *
        *   DST -= SRC
@@ -637,31 +636,31 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
        *  V: Set if an arithmetic overflow occurs, otherwise reset
        */
 
-        case 0x8:{
+    case 0x8:{
 
-            if (bw_flag) {
-                dest_value = truncate_byte(dest_value);
-                source_value = truncate_byte(source_value);
-            }
-
-            result = dest_value - source_value;
-
-            if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag);
-            } else {
-                *destination_addr = bw_flag ? result & 0xFF : result;
-            }
-
-            bool c, z, n, v;
-            z = is_zero(result, bw_flag);
-            n = is_negative(result, bw_flag);
-            c = is_sub_carry(dest_value, source_value, 1);
-            v = is_sub_overflow(dest_value, source_value, 1, bw_flag);
-            set_sr_flags(cpu, c, z, n, v);
-            break;
+        if (bw_flag) {
+            dest_value = truncate_byte(dest_value);
+            source_value = truncate_byte(source_value);
         }
 
-            /* CMP SOURCE, DESTINATION
+        result = dest_value - source_value;
+
+        if (is_daddr_virtual){
+            write_memory_cb(dest_vaddress, result, bw_flag);
+        } else {
+            *destination_addr = bw_flag ? result & 0xFF : result;
+        }
+
+        bool c, z, n, v;
+        z = is_zero(result, bw_flag);
+        n = is_negative(result, bw_flag);
+        c = is_sub_carry(dest_value, source_value, 1);
+        v = is_sub_overflow(dest_value, source_value, 1, bw_flag);
+        set_sr_flags(cpu, c, z, n, v);
+        break;
+    }
+
+        /* CMP SOURCE, DESTINATION
        *
        * N: Set if result is negative, reset if positive (src ≥ dst)
        * Z: Set if result is zero, reset otherwise (src = dst)
@@ -669,278 +668,244 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble)
        * V: Set if an arithmetic overflow occurs, otherwise reset
        * TODO: Fix overflow error
        */
-        case 0x9:{
+    case 0x9:{
 
-            if (bw_flag) {
-                dest_value = truncate_byte(dest_value);
-                source_value = truncate_byte(source_value);
-            }
-
-            result = dest_value - source_value;
-
-            bool c, z, n, v;
-            n = is_negative(result, bw_flag);
-            z = is_zero(result, bw_flag);
-            c = is_sub_carry(dest_value, source_value, 1);
-            v = is_sub_overflow(dest_value, source_value, 1, bw_flag);
-            set_sr_flags(cpu, c, z, n, v);
-            break;
+        if (bw_flag) {
+            dest_value = truncate_byte(dest_value);
+            source_value = truncate_byte(source_value);
         }
 
-            /* DADD SOURCE, DESTINATION
+        result = dest_value - source_value;
+
+        bool c, z, n, v;
+        n = is_negative(result, bw_flag);
+        z = is_zero(result, bw_flag);
+        c = is_sub_carry(dest_value, source_value, 1);
+        v = is_sub_overflow(dest_value, source_value, 1, bw_flag);
+        set_sr_flags(cpu, c, z, n, v);
+        break;
+    }
+
+        /* DADD SOURCE, DESTINATION
        *
        */
-        case 0xA:{
-            fprintf(stderr, "ERROR: DADD INSTRUCTION NOT IMPLEMENTED");
-            exit(1);
-            if (bw_flag == WORD) {
+    case 0xA:{
+        fprintf(stderr, "ERROR: DADD INSTRUCTION NOT IMPLEMENTED");
+        exit(1);
+        if (bw_flag == WORD) {
 
-            }
-            else if (bw_flag == BYTE) {
+        }
+        else if (bw_flag == BYTE) {
 
-            }
-
-            break;
         }
 
-            /* BIT SOURCE, DESTINATION
+        break;
+    }
+
+        /* BIT SOURCE, DESTINATION
        *
        * N: Set if MSB of result is set, reset otherwise
        * Z: Set if result is zero, reset otherwise
        * C: Set if result is not zero, reset otherwise (.NOT. Zero)
        * V: Reset
       */
-        case 0xB:{
+    case 0xB:{
 
-            bool c, z, n, v;
-            result = source_value & dest_value;
-            n = is_negative(result, bw_flag);
-            z = is_zero(result, bw_flag);
-            c = !z;
-            v = false;
-            set_sr_flags(cpu, c, z, n, v);
+        bool c, z, n, v;
+        result = source_value & dest_value;
+        n = is_negative(result, bw_flag);
+        z = is_zero(result, bw_flag);
+        c = !z;
+        v = false;
+        set_sr_flags(cpu, c, z, n, v);
 
-            break;
-        }
+        break;
+    }
 
-            /* BIC SOURCE, DESTINATION
+        /* BIC SOURCE, DESTINATION
        *
        * No status bits affected
        */
-        case 0xC:{
+    case 0xC:{
 
-            result = dest_value & ~source_value;
+        result = dest_value & ~source_value;
 
-            if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag);
-            } else {
-                *destination_addr = bw_flag ? result & 0xFF : result;
-            }
-
-            break;
+        if (is_daddr_virtual){
+            write_memory_cb(dest_vaddress, result, bw_flag);
+        } else {
+            *destination_addr = bw_flag ? result & 0xFF : result;
         }
 
-            /* BIS SOURCE, DESTINATION
+        break;
+    }
+
+        /* BIS SOURCE, DESTINATION
        * No flags affected
        */
-        case 0xD:{
+    case 0xD:{
 
-            result = dest_value | source_value;
+        result = dest_value | source_value;
 
-            if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag);
-            } else {
-                *destination_addr = bw_flag ? result & 0xFF : result;
-            }
-
-            break;
+        if (is_daddr_virtual){
+            write_memory_cb(dest_vaddress, result, bw_flag);
+        } else {
+            *destination_addr = bw_flag ? result & 0xFF : result;
         }
 
-            /* XOR SOURCE, DESTINATION
+        break;
+    }
+
+        /* XOR SOURCE, DESTINATION
        *
        * N: Set if result MSB is set, reset if not set
        * Z: Set if result is zero, reset otherwise
        * C: Set if result is not zero, reset otherwise ( = .NOT. Zero)
        * V: Set if both operands are negative
        */
-        case 0xE:{
+    case 0xE:{
 
-            result = dest_value ^ source_value;
+        result = dest_value ^ source_value;
 
-            bool c, z, n, v;
-            n = is_negative(result, bw_flag);
-            z = is_zero(result, bw_flag);
-            c = !z;
-            v = is_negative(dest_value, bw_flag) &&
-                    is_negative(source_value, bw_flag);
-            set_sr_flags(cpu, c, z, n, v);
+        bool c, z, n, v;
+        n = is_negative(result, bw_flag);
+        z = is_zero(result, bw_flag);
+        c = !z;
+        v = is_negative(dest_value, bw_flag) &&
+                is_negative(source_value, bw_flag);
+        set_sr_flags(cpu, c, z, n, v);
 
-            if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag);
-            } else {
-                *destination_addr = bw_flag ? result & 0xFF : result;
-            }
-
-            break;
+        if (is_daddr_virtual){
+            write_memory_cb(dest_vaddress, result, bw_flag);
+        } else {
+            *destination_addr = bw_flag ? result & 0xFF : result;
         }
 
-            /* AND SOURCE, DESTINATION
+        break;
+    }
+
+        /* AND SOURCE, DESTINATION
        *
        *  N: Set if result MSB is set, reset if not set
        *  Z: Set if result is zero, reset otherwise
        *  C: Set if result is not zero, reset otherwise ( = .NOT. Zero)
        *  V: Reset
        */
-        case 0xF:{
+    case 0xF:{
 
-            result = dest_value & source_value;
+        result = dest_value & source_value;
 
-            bool c, z, n, v;
-            n = is_negative(result, bw_flag);
-            z = is_zero(result, bw_flag);
-            c = !z;
-            v = false;
-            set_sr_flags(cpu, c, z, n, v);
+        bool c, z, n, v;
+        n = is_negative(result, bw_flag);
+        z = is_zero(result, bw_flag);
+        c = !z;
+        v = false;
+        set_sr_flags(cpu, c, z, n, v);
 
-            if (is_daddr_virtual){
-                write_memory_cb(dest_vaddress, result, bw_flag);
-            } else {
-                *destination_addr = bw_flag ? result & 0xFF : result;
-            }
-
-            break;
-        }
-        default: {
-            fprintf(stderr, "INVALID FORMAT I OPCODE, EXITING.");
-            exit(1);
+        if (is_daddr_virtual){
+            write_memory_cb(dest_vaddress, result, bw_flag);
+        } else {
+            *destination_addr = bw_flag ? result & 0xFF : result;
         }
 
-        } //# End of switch
-
-    } // End of if
-
-
-
-    // DISASSEMBLY MODE
-#ifdef TRACE_INSTRUCTIONS
-    char mnemonic [100];
-    switch (opcode) {
-    case 0x4: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "MOV", sizeof mnemonic) :
-                    strncpy(mnemonic, "MOV.B", sizeof mnemonic);
-
         break;
     }
-    case 0x5: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "ADD", sizeof mnemonic) :
-                    strncpy(mnemonic, "ADD.B", sizeof mnemonic);
-
-        break;
-    }
-    case 0x6: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "ADDC", sizeof mnemonic) :
-                    strncpy(mnemonic, "ADDC.B", sizeof mnemonic);
-
-        break;
-    }
-    case 0x7: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "SUBC", sizeof mnemonic) :
-                    strncpy(mnemonic, "SUBC.B", sizeof mnemonic);
-
-        break;
-    }
-    case 0x8: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "SUB", sizeof mnemonic) :
-                    strncpy(mnemonic, "SUB.B", sizeof mnemonic);
-
-        break;
-    }
-    case 0x9: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "CMP", sizeof mnemonic) :
-                    strncpy(mnemonic, "CMP.B", sizeof mnemonic);
-
-        break;
-    }
-    case 0xA: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "DADD", sizeof mnemonic) :
-                    strncpy(mnemonic, "DADD.B", sizeof mnemonic);
-
-        break;
-    }
-    case 0xB: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "BIT", sizeof mnemonic) :
-                    strncpy(mnemonic, "BIT.B", sizeof mnemonic);
-
-        break;
-    }
-    case 0xC: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "BIC", sizeof mnemonic) :
-                    strncpy(mnemonic, "BIC.B", sizeof mnemonic);
-
-        break;
-    }
-    case 0xD: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "BIS", sizeof mnemonic) :
-                    strncpy(mnemonic, "BIS.B", sizeof mnemonic);
-
-        break;
-    }
-    case 0xE: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "XOR", sizeof mnemonic) :
-                    strncpy(mnemonic, "XOR.B", sizeof mnemonic);
-
-        break;
-    }
-    case 0xF: {
-        bw_flag == WORD ?
-                    strncpy(mnemonic, "AND", sizeof mnemonic) :
-                    strncpy(mnemonic, "AND.B", sizeof mnemonic);
-
-        break;
+    default: {
+        fprintf(stderr, "INVALID FORMAT I OPCODE, EXITING.");
+        exit(1);
     }
 
     } //# End of switch
 
-    strncat(mnemonic, "\t", sizeof mnemonic);
-    strncat(mnemonic, asm_operands, sizeof mnemonic);
-    strncat(mnemonic, "\n", sizeof mnemonic);
+    if (disas != NULL) {
+        switch (opcode) {
+        case 0x4: {
+            bw_flag == WORD ?
+                        strncpy(disas, "MOV", sizeof disas) :
+                        strncpy(disas, "MOV.B", sizeof disas);
 
-    //        if (emu->debugger->debug_mode){ //disassemble && emu->debugger->debug_mode) {
-    int i;
-    char one = 0, two = 0;
+            break;
+        }
+        case 0x5: {
+            bw_flag == WORD ?
+                        strncpy(disas, "ADD", sizeof disas) :
+                        strncpy(disas, "ADD.B", sizeof disas);
 
-    // Make little endian big endian
-    for (i = 0;i < strlen(hex_str);i += 4) {
-        one = hex_str[i];
-        two = hex_str[i + 1];
+            break;
+        }
+        case 0x6: {
+            bw_flag == WORD ?
+                        strncpy(disas, "ADDC", sizeof disas) :
+                        strncpy(disas, "ADDC.B", sizeof disas);
 
-        hex_str[i] = hex_str[i + 2];
-        hex_str[i + 1] = hex_str[i + 3];
+            break;
+        }
+        case 0x7: {
+            bw_flag == WORD ?
+                        strncpy(disas, "SUBC", sizeof disas) :
+                        strncpy(disas, "SUBC.B", sizeof disas);
 
-        hex_str[i + 2] = one;
-        hex_str[i + 3] = two;
+            break;
+        }
+        case 0x8: {
+            bw_flag == WORD ?
+                        strncpy(disas, "SUB", sizeof disas) :
+                        strncpy(disas, "SUB.B", sizeof disas);
+
+            break;
+        }
+        case 0x9: {
+            bw_flag == WORD ?
+                        strncpy(disas, "CMP", sizeof disas) :
+                        strncpy(disas, "CMP.B", sizeof disas);
+
+            break;
+        }
+        case 0xA: {
+            bw_flag == WORD ?
+                        strncpy(disas, "DADD", sizeof disas) :
+                        strncpy(disas, "DADD.B", sizeof disas);
+
+            break;
+        }
+        case 0xB: {
+            bw_flag == WORD ?
+                        strncpy(disas, "BIT", sizeof disas) :
+                        strncpy(disas, "BIT.B", sizeof disas);
+
+            break;
+        }
+        case 0xC: {
+            bw_flag == WORD ?
+                        strncpy(disas, "BIC", sizeof disas) :
+                        strncpy(disas, "BIC.B", sizeof disas);
+
+            break;
+        }
+        case 0xD: {
+            bw_flag == WORD ?
+                        strncpy(disas, "BIS", sizeof disas) :
+                        strncpy(disas, "BIS.B", sizeof disas);
+
+            break;
+        }
+        case 0xE: {
+            bw_flag == WORD ?
+                        strncpy(disas, "XOR", sizeof disas) :
+                        strncpy(disas, "XOR.B", sizeof disas);
+
+            break;
+        }
+        case 0xF: {
+            bw_flag == WORD ?
+                        strncpy(disas, "AND", sizeof disas) :
+                        strncpy(disas, "AND.B", sizeof disas);
+
+            break;
+        }
+
+        } //# End of switch
+
+        strncat(disas, " ", sizeof disas);
+        strncat(disas, asm_operands, sizeof disas);
     }
-
-    printf("%s", hex_str);
-
-    for (i = strlen(hex_str);i < 12;i++) {
-        printf(" ");
-    }
-
-    printf("\t%s", mnemonic);
-#endif // TRACE_INSTRUCTIONS
-    //        }
-
-    //    }
 }

@@ -22,6 +22,5 @@
 #include "flag_handler.h"
 #include "../utilities.h"
 
-void decode_formatI(Cpu *cpu, uint16_t instruction, bool disassemble);
-
+void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas);
 #endif

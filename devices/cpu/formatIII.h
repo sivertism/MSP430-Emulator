@@ -19,6 +19,6 @@
 #ifndef _DECODE_FORMATIII_H_
 #define _DECODE_FORMATIII_H_
 
-void decode_formatIII(Cpu *cpu, uint16_t instruction, bool disassemble);
+void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas);
 
 #endif
