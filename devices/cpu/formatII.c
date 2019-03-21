@@ -77,14 +77,16 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
             source_address = &bogus_reg;
             is_saddr_virtual = 0;
 
-            sprintf(asm_operand, "#0x%04X", (uint16_t) source_value);
+            sprintf(asm_operand, "#C0x%04X", (uint16_t) source_value);
         }
         else {                             /* Source Register */
             source_value = *reg;
             source_address = reg;
             is_saddr_virtual = 0;
-
             sprintf(asm_operand, "%s", reg_name);
+            if (opcode == OP_PUSH) {
+                consume_cycles_cb(1);
+            }
         }
     }
 
@@ -98,7 +100,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
             source_address = &bogus_reg;
             is_saddr_virtual = 0;
 
-            sprintf(asm_operand, "#0x%04X", source_value);
+            sprintf(asm_operand, "C#0x%04X", source_value);
         }
         else if (source == 0) {            /* Source Symbolic */
             source_offset = fetch(cpu);
@@ -152,7 +154,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
             source_address = &bogus_reg;
             is_saddr_virtual = 0;
 
-            sprintf(asm_operand, "#0x%04X", immediate_constant);
+            sprintf(asm_operand, "C#0x%04X", immediate_constant);
         }
         else {                             /* Source Indirect */
             source_vaddress = *reg;
@@ -172,7 +174,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
             source_address = &bogus_reg;
             is_saddr_virtual = 0;
 
-            sprintf(asm_operand, "#0x%04X", (uint16_t) source_value);
+            sprintf(asm_operand, "C#0x%04X", (uint16_t) source_value);
         }
         else if (source == 0) {            /* Source Immediate */
             source_value = bogus_reg = fetch(cpu);
@@ -393,39 +395,39 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
         switch (opcode) {
         case 0x0: {
             bw_flag == WORD ?
-                        strncpy(disas, "RRC", sizeof disas) :
-                        strncpy(disas, "RRC.B", sizeof disas);
+                        strncpy(disas, "RRC", DISAS_STR_LEN) :
+                        strncpy(disas, "RRC.B", DISAS_STR_LEN);
 
             break;
         }
         case 0x1: {
-            strncpy(disas, "SWPB", sizeof disas);
+            strncpy(disas, "SWPB", DISAS_STR_LEN);
             break;
         }
         case 0x2: {
             bw_flag == WORD ?
-                        strncpy(disas, "RRA", sizeof disas) :
-                        strncpy(disas, "RRA.B", sizeof disas);
+                        strncpy(disas, "RRA", DISAS_STR_LEN) :
+                        strncpy(disas, "RRA.B", DISAS_STR_LEN);
 
             break;
         }
         case 0x3: {
-            strncpy(disas, "SXT", sizeof disas);
+            strncpy(disas, "SXT", DISAS_STR_LEN);
             break;
         }
         case 0x4: {
             bw_flag == WORD ?
-                        strncpy(disas, "PUSH", sizeof disas) :
-                        strncpy(disas, "PUSH.B", sizeof disas);
+                        strncpy(disas, "PUSH", DISAS_STR_LEN) :
+                        strncpy(disas, "PUSH.B", DISAS_STR_LEN);
 
             break;
         }
         case 0x5: {
-            strncpy(disas, "CALL", sizeof disas);
+            strncpy(disas, "CALL", DISAS_STR_LEN);
             break;
         }
         case 0x6: {
-            strncpy(disas, "RETI", sizeof disas);
+            strncpy(disas, "RETI", DISAS_STR_LEN);
             break;
         }
         default: {
@@ -434,8 +436,8 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
 
         } //# End of Switch
 
-        strncat(disas, " ", sizeof disas);
-        strncat(disas, asm_operand, sizeof disas);
+        strncat(disas, " ", DISAS_STR_LEN);
+        strncat(disas, asm_operand, DISAS_STR_LEN);
     }
 
 }

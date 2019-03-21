@@ -29,6 +29,8 @@
 #include "formatII.h"
 #include "formatIII.h"
 
+#define DISAS_STR_LEN   80
+
 int16_t run_constant_generator(uint8_t source, uint8_t as_flag);
 
 void decode(Cpu *cpu, uint16_t instruction, char *disas);

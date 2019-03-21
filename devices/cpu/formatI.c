@@ -88,7 +88,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
         if (constant_generator_active) {   /* Source Constant */
             source_value = immediate_constant;
 
-            sprintf(asm_operands, "#0x%04X, %s",
+            sprintf(asm_operands, "C#0x%04X, %s",
                     (uint16_t) source_value, d_reg_name);
         }
         else {                             /* Source register */
@@ -120,7 +120,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
 
         if (constant_generator_active) {   /* Source Constant */
             source_value = immediate_constant;
-            sprintf(asm_operands, "#0x%04X, ", source_value);
+            sprintf(asm_operands, "C#0x%04X, ", source_value);
         }
         else {                             /* Source from register */
             source_value = *s_reg;
@@ -161,7 +161,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
     else if (as_flag == 1 && ad_flag == 0) {
         if (constant_generator_active) {   /* Source Constant */
             source_value = immediate_constant;
-            sprintf(asm_operands, "#0x%04X, %s", source_value, d_reg_name);
+            sprintf(asm_operands, "C#0x%04X, %s", source_value, d_reg_name);
             is_saddr_virtual = 0;
         }
         else if (source == 0) {            /* Source Symbolic */
@@ -227,7 +227,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
     else if (as_flag == 1 && ad_flag == 1) {
         if (constant_generator_active) {   /* Source Constant */
             source_value = immediate_constant;
-            sprintf(asm_operands, "#0x%04X, ", source_value);
+            sprintf(asm_operands, "C#0x%04X, ", source_value);
             is_saddr_virtual = 0;
         }
         else if (source == 0) {            /* Source Symbolic */
@@ -301,7 +301,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
     else if (as_flag == 2 && ad_flag == 0) {
         if (constant_generator_active) {   /* Source Constant */
             source_value = immediate_constant;
-            sprintf(asm_operands, "#0x%04X, %s", immediate_constant, d_reg_name);
+            sprintf(asm_operands, "C#0x%04X, %s", immediate_constant, d_reg_name);
             is_saddr_virtual = 0;
         }
         else {                             /* Source Indirect */
@@ -335,7 +335,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
         if (constant_generator_active) {   /* Source Constant */
             source_value = immediate_constant;
             is_saddr_virtual = 0;
-            sprintf(asm_operands, "#0x%04X, ", source_value);
+            sprintf(asm_operands, "C#0x%04X, ", source_value);
         }
         else {                             /* Source Indirect */
             is_saddr_virtual = 1;
@@ -377,18 +377,19 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
     /* Immediate - Register;    Ex: MOV #S, Rd   */
     /* Constant Gen - Register; Ex: MOV #C, Rd   */ /* -1, 8 */
     else if (as_flag == 3 && ad_flag == 0) {
+        if (destination == REG_PC) {
+            consume_cycles_cb(1);
+        }
         if (constant_generator_active) {   /* Source Constant */
             source_value = immediate_constant;
             is_saddr_virtual = 0;
-            consume_cycles_cb(1);
 
-            sprintf(asm_operands, "#0x%04X, %s",
+            sprintf(asm_operands, "C#0x%04X, %s",
                     (uint16_t) source_value, d_reg_name);
         }
         else if (source == 0) {            /* Source Immediate */
             source_value = fetch(cpu);
             is_saddr_virtual = 0;
-            consume_cycles_cb(1);
 
             sprintf(hex_str_part, "%04X", (uint16_t) source_value);
             strncat(hex_str, hex_str_part, sizeof hex_str);
@@ -403,12 +404,12 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
             }
         }
         else {                              /* Source Indirect Auto Increment */
-
             is_saddr_virtual = 1;
             source_vaddress = *s_reg;
             source_value = read_memory_cb(source_vaddress, bw_flag);
-            consume_cycles_cb(2);
-
+            if (destination == REG_PC) {
+                consume_cycles_cb(1);
+            }
 
             sprintf(asm_operands, "@%s+, %s", s_reg_name, d_reg_name);
 
@@ -433,7 +434,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
         if (constant_generator_active) {   /* Source Constant */
             source_value = immediate_constant;
             is_saddr_virtual = 0;
-            sprintf(asm_operands, "#0x%04X, ", (uint16_t)source_value);
+            sprintf(asm_operands, "C#0x%04X, ", (uint16_t)source_value);
         }
         else if (source == 0) {            /* Source Immediate */
             source_value = fetch(cpu);
@@ -820,92 +821,92 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
         switch (opcode) {
         case 0x4: {
             bw_flag == WORD ?
-                        strncpy(disas, "MOV", sizeof disas) :
-                        strncpy(disas, "MOV.B", sizeof disas);
+                        strncpy(disas, "MOV", DISAS_STR_LEN) :
+                        strncpy(disas, "MOV.B", DISAS_STR_LEN);
 
             break;
         }
         case 0x5: {
             bw_flag == WORD ?
-                        strncpy(disas, "ADD", sizeof disas) :
-                        strncpy(disas, "ADD.B", sizeof disas);
+                        strncpy(disas, "ADD", DISAS_STR_LEN) :
+                        strncpy(disas, "ADD.B", DISAS_STR_LEN);
 
             break;
         }
         case 0x6: {
             bw_flag == WORD ?
-                        strncpy(disas, "ADDC", sizeof disas) :
-                        strncpy(disas, "ADDC.B", sizeof disas);
+                        strncpy(disas, "ADDC", DISAS_STR_LEN) :
+                        strncpy(disas, "ADDC.B", DISAS_STR_LEN);
 
             break;
         }
         case 0x7: {
             bw_flag == WORD ?
-                        strncpy(disas, "SUBC", sizeof disas) :
-                        strncpy(disas, "SUBC.B", sizeof disas);
+                        strncpy(disas, "SUBC", DISAS_STR_LEN) :
+                        strncpy(disas, "SUBC.B", DISAS_STR_LEN);
 
             break;
         }
         case 0x8: {
             bw_flag == WORD ?
-                        strncpy(disas, "SUB", sizeof disas) :
-                        strncpy(disas, "SUB.B", sizeof disas);
+                        strncpy(disas, "SUB", DISAS_STR_LEN) :
+                        strncpy(disas, "SUB.B", DISAS_STR_LEN);
 
             break;
         }
         case 0x9: {
             bw_flag == WORD ?
-                        strncpy(disas, "CMP", sizeof disas) :
-                        strncpy(disas, "CMP.B", sizeof disas);
+                        strncpy(disas, "CMP", DISAS_STR_LEN) :
+                        strncpy(disas, "CMP.B", DISAS_STR_LEN);
 
             break;
         }
         case 0xA: {
             bw_flag == WORD ?
-                        strncpy(disas, "DADD", sizeof disas) :
-                        strncpy(disas, "DADD.B", sizeof disas);
+                        strncpy(disas, "DADD", DISAS_STR_LEN) :
+                        strncpy(disas, "DADD.B", DISAS_STR_LEN);
 
             break;
         }
         case 0xB: {
             bw_flag == WORD ?
-                        strncpy(disas, "BIT", sizeof disas) :
-                        strncpy(disas, "BIT.B", sizeof disas);
+                        strncpy(disas, "BIT", DISAS_STR_LEN) :
+                        strncpy(disas, "BIT.B", DISAS_STR_LEN);
 
             break;
         }
         case 0xC: {
             bw_flag == WORD ?
-                        strncpy(disas, "BIC", sizeof disas) :
-                        strncpy(disas, "BIC.B", sizeof disas);
+                        strncpy(disas, "BIC", DISAS_STR_LEN) :
+                        strncpy(disas, "BIC.B", DISAS_STR_LEN);
 
             break;
         }
         case 0xD: {
             bw_flag == WORD ?
-                        strncpy(disas, "BIS", sizeof disas) :
-                        strncpy(disas, "BIS.B", sizeof disas);
+                        strncpy(disas, "BIS", DISAS_STR_LEN) :
+                        strncpy(disas, "BIS.B", DISAS_STR_LEN);
 
             break;
         }
         case 0xE: {
             bw_flag == WORD ?
-                        strncpy(disas, "XOR", sizeof disas) :
-                        strncpy(disas, "XOR.B", sizeof disas);
+                        strncpy(disas, "XOR", DISAS_STR_LEN) :
+                        strncpy(disas, "XOR.B", DISAS_STR_LEN);
 
             break;
         }
         case 0xF: {
             bw_flag == WORD ?
-                        strncpy(disas, "AND", sizeof disas) :
-                        strncpy(disas, "AND.B", sizeof disas);
+                        strncpy(disas, "AND", DISAS_STR_LEN) :
+                        strncpy(disas, "AND.B", DISAS_STR_LEN);
 
             break;
         }
 
         } //# End of switch
 
-        strncat(disas, " ", sizeof disas);
-        strncat(disas, asm_operands, sizeof disas);
+        strncat(disas, " ", DISAS_STR_LEN);
+        strncat(disas, asm_operands, DISAS_STR_LEN);
     }
 }

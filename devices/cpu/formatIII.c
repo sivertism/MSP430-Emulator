@@ -32,6 +32,9 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
     int16_t signed_offset = (instruction & 0x03FF) * 2;
     bool negative = (instruction & (1u<<9)) > 0; // signed_offset >> 9;
 
+    // All jumps take 2 cycles (1 for fetch and one for execute)
+    consume_cycles_cb(1);
+
     if (negative) { /* Sign Extend for Arithmetic Operations */
         signed_offset |= 0xfffff800;
     }
@@ -200,7 +203,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
 
         } //# End of Switch
 
-        strncat(disas, " ", sizeof(disas));
-        strncat(disas, value, sizeof(disas));
+        strncat(disas, " ", DISAS_STR_LEN);
+        strncat(disas, value, DISAS_STR_LEN);
     }
 }
