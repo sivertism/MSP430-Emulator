@@ -19,6 +19,8 @@
 #ifndef _DECODE_FORMATIII_H_
 #define _DECODE_FORMATIII_H_
 
-void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas);
+#include "decoder.h"
+
+void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *instr);
 
 #endif

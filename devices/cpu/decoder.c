@@ -27,7 +27,7 @@ uint16_t fetch(Cpu *cpu)
 }
 
 /*##########+++ CPU Decode Cycle +++##########*/
-void decode(Cpu *cpu, uint16_t instruction, char *disas)
+void decode(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *instr)
 {  
   uint8_t format_id;
 
@@ -35,18 +35,22 @@ void decode(Cpu *cpu, uint16_t instruction, char *disas)
 
   if (format_id == 0x1) {
     // format II (single operand) instruction //
-    decode_formatII(cpu, instruction, disas);
+    instr->format = 1;
+    decode_formatII(cpu, instruction, disas, instr);
   }    
   else if (format_id >= 0x2 && format_id <= 3) {
     // format III (jump) instruction //
-    decode_formatIII(cpu, instruction, disas);
+    instr->format = 2;
+    decode_formatIII(cpu, instruction, disas, instr);
   }
   else if (format_id >= 0x4) {
     // format I (two operand) instruction //
-    decode_formatI(cpu, instruction, disas);
+    instr->format = 3;
+    decode_formatI(cpu, instruction, disas, instr);
   }
   else {
-    sprintf(disas, "%04X\t[INVALID INSTRUCTION]\n", instruction);
+    printf("%04X\t[INVALID INSTRUCTION]\n", instruction);
+    exit(0);
     cpu->pc -= 2;
     cpu->running = false;
   }

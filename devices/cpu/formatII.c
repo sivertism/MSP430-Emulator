@@ -30,7 +30,7 @@
 #include "opcodes.h"
 #include "../utilities.h"
 
-void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
+void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *instr)
 {
     int is_saddr_virtual=0;   /// Indicate if source source address is virtual
 
@@ -247,6 +247,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
         z = is_zero(result, bw_flag);
         v = false;
         set_sr_flags(cpu, c, z, n, v);
+        strncpy(instr->mnemonic, "RRC", sizeof(instr->mnemonic)-1);
 
         break;
     }
@@ -269,6 +270,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
             *source_address = result;
         }
 
+        strncpy(instr->mnemonic, "SWPB", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -303,6 +305,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
         n = is_negative(result, bw_flag);
         z = is_zero(result, bw_flag);
         set_sr_flags(cpu, c, z, n, v);
+        strncpy(instr->mnemonic, "RRA", sizeof(instr->mnemonic)-1);
 
         break;
     }
@@ -319,8 +322,8 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
        */
 
     case 0x3:{
-        result = source_value & (1<<7) ? source_value | 0xFF00 :
-                                         source_value & 0x00FF;
+        result = (source_value & (1<<7)) ? source_value | 0xFF00 :
+                                           source_value & 0x00FF;
 
         if (is_saddr_virtual){  // Write result to memory
             write_memory_cb(source_vaddress, result, WORD);
@@ -334,6 +337,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
         c = !z;
         v = false;
         set_sr_flags(cpu, c, z, n, v);
+        strncpy(instr->mnemonic, "SXT", sizeof(instr->mnemonic)-1);
 
         break;
     }
@@ -351,6 +355,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
         // Write result to memory
         write_memory_cb(cpu->sp , source_value, bw_flag);
 
+        strncpy(instr->mnemonic, "PUSH", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -368,6 +373,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
 
         // Jump
         cpu->pc = source_value;
+        strncpy(instr->mnemonic, "CALL", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -382,6 +388,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
         cpu->sp += 2;
 
         consume_cycles_cb(2);
+        strncpy(instr->mnemonic, "RETI", sizeof(instr->mnemonic)-1);
         break;
     }
     default: {
@@ -441,4 +448,3 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas)
     }
 
 }
-

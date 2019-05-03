@@ -33,7 +33,7 @@
 
 int16_t run_constant_generator(uint8_t source, uint8_t as_flag);
 
-void decode(Cpu *cpu, uint16_t instruction, char *disas);
+void decode(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *instr);
 
 uint16_t fetch(Cpu *cpu);
 
@@ -41,4 +41,5 @@ enum {
   WORD, 
   BYTE 
 };
+
 #endif

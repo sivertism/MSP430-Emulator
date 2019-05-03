@@ -26,7 +26,7 @@
 
 #include "decoder.h"
 
-void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
+void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *instr)
 {
     uint8_t condition = (instruction & 0x1C00) >> 10;
     int16_t signed_offset = (instruction & 0x03FF) * 2;
@@ -38,8 +38,6 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
     if (negative) { /* Sign Extend for Arithmetic Operations */
         signed_offset |= 0xfffff800;
     }
-
-    char value[20];
 
     /* String to show hex value of instruction */
     char hex_str[100] = {0};
@@ -57,6 +55,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
         if (get_zero_flag(cpu) == false) {
             cpu->pc += signed_offset;
         }
+        strncpy(instr->mnemonic, "JNZ", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -68,6 +67,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
         if (get_zero_flag(cpu) == true) {
             cpu->pc += signed_offset;
         }
+        strncpy(instr->mnemonic, "JZ", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -80,6 +80,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
         if (get_carry(cpu) == false) {
             cpu->pc += signed_offset;
         }
+        strncpy(instr->mnemonic, "JNC", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -92,6 +93,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
         if (get_carry(cpu) == true) {
             cpu->pc += signed_offset;
         }
+        strncpy(instr->mnemonic, "JC", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -105,6 +107,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
             cpu->pc += signed_offset;
         }
 
+        strncpy(instr->mnemonic, "JN", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -118,6 +121,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
             cpu->pc += signed_offset;
         }
 
+        strncpy(instr->mnemonic, "JGE", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -130,6 +134,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
         if ((get_negative_flag(cpu) ^ get_overflow_flag(cpu)) == true) {
             cpu->pc += signed_offset;
         }
+        strncpy(instr->mnemonic, "JL", sizeof(instr->mnemonic)-1);
 
         break;
     }
@@ -141,6 +146,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
    */
     case 0x7:{
         cpu->pc += signed_offset;
+        strncpy(instr->mnemonic, "JMP", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -152,6 +158,8 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas)
     } //# End of Switch
 
     if (disas != NULL) {
+        char value[20];
+
         switch(condition){
 
         case 0x0:{

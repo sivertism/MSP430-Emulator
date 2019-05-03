@@ -20,6 +20,7 @@
 #define _DECODE_FORMATII_H
 
 #include "flag_handler.h"
+#include "decoder.h"
 
-void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas);
+void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *instr);
 #endif

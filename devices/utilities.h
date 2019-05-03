@@ -25,6 +25,14 @@
 
 #include "cpu/registers.h"
 
+struct istruct{
+    int format; // Format I, II or III
+    char mnemonic [10];
+    char op1 [10];
+    char op2 [10];
+};
+typedef struct istruct instruction_t;
+
 void reg_num_to_name(uint8_t source_reg, char *reg_name);
 int16_t *get_reg_ptr(Cpu *cpu, uint8_t reg);
 void set_write_memory_cb(void (*functionPtr)(uint16_t, uint16_t, uint8_t));

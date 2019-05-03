@@ -31,7 +31,7 @@
 #include "decoder.h"
 #include "opcodes.h"
 
-void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
+void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *instr)
 {
     int is_saddr_virtual;
     int is_daddr_virtual;
@@ -507,6 +507,8 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
             *destination_addr = result;
         }
 
+        strncpy(instr->mnemonic, "MOV", sizeof(instr->mnemonic)-1);
+
         break;
     }
 
@@ -538,6 +540,8 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
         } else {
             *destination_addr = result;
         }
+
+        strncpy(instr->mnemonic, "ADD", sizeof(instr->mnemonic)-1);
 
         bool c, z, n, v;
         z = is_zero(result, bw_flag);
@@ -582,6 +586,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
         v = is_add_overflow(
                     dest_value, source_value, get_carry(cpu), bw_flag);
         set_sr_flags(cpu, c, z, n, v);
+        strncpy(instr->mnemonic, "ADDC" , sizeof(instr->mnemonic)-1);
 
         break;
     }
@@ -622,6 +627,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
         v = is_sub_overflow(
                     dest_value, source_value, get_carry(cpu), bw_flag);
         set_sr_flags(cpu, c, z, n, v);
+        strncpy(instr->mnemonic, "SUBC", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -658,6 +664,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
         c = is_sub_carry(dest_value, source_value, 1);
         v = is_sub_overflow(dest_value, source_value, 1, bw_flag);
         set_sr_flags(cpu, c, z, n, v);
+        strncpy(instr->mnemonic, "SUB", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -684,6 +691,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
         c = is_sub_carry(dest_value, source_value, 1);
         v = is_sub_overflow(dest_value, source_value, 1, bw_flag);
         set_sr_flags(cpu, c, z, n, v);
+        strncpy(instr->mnemonic, "CMP", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -700,6 +708,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
 
         }
 
+        strncpy(instr->mnemonic, "DADD", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -720,6 +729,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
         v = false;
         set_sr_flags(cpu, c, z, n, v);
 
+        strncpy(instr->mnemonic, "RETI", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -737,6 +747,8 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
             *destination_addr = bw_flag ? result & 0xFF : result;
         }
 
+        strncpy(instr->mnemonic, "BIC", sizeof(instr->mnemonic)-1);
+
         break;
     }
 
@@ -753,6 +765,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
             *destination_addr = bw_flag ? result & 0xFF : result;
         }
 
+        strncpy(instr->mnemonic, "BIS", sizeof(instr->mnemonic)-1);
         break;
     }
 
@@ -781,6 +794,8 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
             *destination_addr = bw_flag ? result & 0xFF : result;
         }
 
+        strncpy(instr->mnemonic, "XOR", sizeof(instr->mnemonic)-1);
+
         break;
     }
 
@@ -808,6 +823,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas)
             *destination_addr = bw_flag ? result & 0xFF : result;
         }
 
+        strncpy(instr->mnemonic, "AND", sizeof(instr->mnemonic)-1);
         break;
     }
     default: {
