@@ -373,6 +373,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t 
 
         // Jump
         cpu->pc = source_value;
+        instr->isDestPC = true;
         strncpy(instr->mnemonic, "CALL", sizeof(instr->mnemonic)-1);
         break;
     }
@@ -386,6 +387,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t 
         // 2 Pop PC from stack
         cpu->pc = read_memory_cb(cpu->sp, WORD);
         cpu->sp += 2;
+        instr->isDestPC = true;
 
         consume_cycles_cb(2);
         strncpy(instr->mnemonic, "RETI", sizeof(instr->mnemonic)-1);

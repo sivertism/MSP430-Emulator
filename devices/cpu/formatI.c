@@ -98,6 +98,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *
 
         if (destination == REG_PC) {
             consume_cycles_cb(constant_generator_active ? 1 : 2);
+            instr->isDestPC = true;
         }
 
         destination_addr = d_reg;          /* Destination Register */
@@ -205,6 +206,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *
 
         if (destination == REG_PC) {
             consume_cycles_cb(constant_generator_active ? 1 : 2);
+            instr->isDestPC = true;
         }
 
         destination_addr = d_reg;          /* Destination register */
@@ -313,6 +315,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *
 
         if (destination == REG_PC) {
             consume_cycles_cb(constant_generator_active ? 1 : 2);
+            instr->isDestPC = true;
         }
 
         destination_addr = d_reg;          /* Destination Register */
@@ -379,6 +382,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *
     else if (as_flag == 3 && ad_flag == 0) {
         if (destination == REG_PC) {
             consume_cycles_cb(1);
+            instr->isDestPC = true;
         }
         if (constant_generator_active) {   /* Source Constant */
             source_value = immediate_constant;
@@ -409,6 +413,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *
             source_value = read_memory_cb(source_vaddress, bw_flag);
             if (destination == REG_PC) {
                 consume_cycles_cb(1);
+                instr->isDestPC = true;
             }
 
             sprintf(asm_operands, "@%s+, %s", s_reg_name, d_reg_name);

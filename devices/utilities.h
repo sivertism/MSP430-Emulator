@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -28,6 +29,7 @@
 struct istruct{
     int format; // Format I, II or III
     char mnemonic [10];
+    bool isDestPC;
     char op1 [10];
     char op2 [10];
 };

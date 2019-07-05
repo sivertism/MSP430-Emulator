@@ -30,6 +30,7 @@ uint16_t fetch(Cpu *cpu)
 void decode(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *instr)
 {  
   uint8_t format_id;
+  instr->isDestPC = false; // default value
 
   format_id = (uint8_t)(instruction >> 12);
 
@@ -40,12 +41,12 @@ void decode(Cpu *cpu, uint16_t instruction, char *disas, instruction_t *instr)
   }    
   else if (format_id >= 0x2 && format_id <= 3) {
     // format III (jump) instruction //
-    instr->format = 2;
+    instr->format = 3;
     decode_formatIII(cpu, instruction, disas, instr);
   }
   else if (format_id >= 0x4) {
     // format I (two operand) instruction //
-    instr->format = 3;
+    instr->format = 2;
     decode_formatI(cpu, instruction, disas, instr);
   }
   else {
