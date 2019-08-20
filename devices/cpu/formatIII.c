@@ -1,4 +1,4 @@
-/*                                                                             
+﻿/*                                                                             
   MSP430 Emulator
   Copyright (C) 2014, 2015 Rudolf Geosits (rgeosits@live.esu.edu)
 
@@ -54,6 +54,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t
     case 0x0:{
         if (get_zero_flag(cpu) == false) {
             cpu->pc += signed_offset;
+            register_write_notify_cb(1);
             instr->isDestPC = true;
         }
         strncpy(instr->mnemonic, "JNZ", sizeof(instr->mnemonic)-1);
@@ -67,6 +68,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t
     case 0x1:{
         if (get_zero_flag(cpu) == true) {
             cpu->pc += signed_offset;
+            register_write_notify_cb(1);
             instr->isDestPC = true;
         }
         strncpy(instr->mnemonic, "JZ", sizeof(instr->mnemonic)-1);
@@ -81,6 +83,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t
     case 0x2:{
         if (get_carry(cpu) == false) {
             cpu->pc += signed_offset;
+            register_write_notify_cb(1);
             instr->isDestPC = true;
         }
         strncpy(instr->mnemonic, "JNC", sizeof(instr->mnemonic)-1);
@@ -95,6 +98,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t
     case 0x3:{
         if (get_carry(cpu) == true) {
             cpu->pc += signed_offset;
+            register_write_notify_cb(1);
             instr->isDestPC = true;
         }
         strncpy(instr->mnemonic, "JC", sizeof(instr->mnemonic)-1);
@@ -109,6 +113,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t
     case 0x4:{
         if (get_negative_flag(cpu) == true) {
             cpu->pc += signed_offset;
+            register_write_notify_cb(1);
             instr->isDestPC = true;
         }
 
@@ -124,6 +129,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t
     case 0x5:{
         if ((get_negative_flag(cpu) ^ get_overflow_flag(cpu)) == false) {
             cpu->pc += signed_offset;
+            register_write_notify_cb(1);
             instr->isDestPC = true;
         }
 
@@ -139,6 +145,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t
     case 0x6:{
         if ((get_negative_flag(cpu) ^ get_overflow_flag(cpu)) == true) {
             cpu->pc += signed_offset;
+            register_write_notify_cb(1);
             instr->isDestPC = true;
         }
         strncpy(instr->mnemonic, "JL", sizeof(instr->mnemonic)-1);
@@ -153,6 +160,7 @@ void decode_formatIII(Cpu *cpu, uint16_t instruction, char *disas, instruction_t
    */
     case 0x7:{
         cpu->pc += signed_offset;
+        register_write_notify_cb(1);
         instr->isDestPC = true;
         strncpy(instr->mnemonic, "JMP", sizeof(instr->mnemonic)-1);
         break;

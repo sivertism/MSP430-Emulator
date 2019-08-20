@@ -1,4 +1,4 @@
-/*                                                                
+﻿/*                                                                
 MSP430 Emulator                                                   
 Copyright (C) 2016 Rudolf Geosits (rgeosits@live.esu.edu)                
 This program is free software: you can redistribute it and/or modify           
@@ -20,6 +20,8 @@ along with this program. If not, see <http://www.gnu.org/licenses
 void (*write_memory_cb)(uint16_t, uint16_t, uint8_t);
 uint16_t (*read_memory_cb)(uint16_t, uint8_t);
 void (*consume_cycles_cb)(uint16_t);
+void (*register_read_notify_cb)(uint16_t);
+void (*register_write_notify_cb)(uint16_t);
 
 void set_write_memory_cb(void (*functionPtr)(uint16_t,uint16_t,uint8_t)) {
     write_memory_cb = functionPtr;
@@ -31,6 +33,14 @@ void set_read_memory_cb(uint16_t (*functionPtr)(uint16_t,uint8_t)) {
 
 void set_consume_cycles_cb(void (*functionPtr)(uint16_t)) {
     consume_cycles_cb = functionPtr;
+}
+
+void set_register_read_notify_cb(void (*functionPtr)(uint16_t)) {
+    register_read_notify_cb = functionPtr;
+}
+
+void set_register_write_notify_cb(void (*functionPtr)(uint16_t)){
+    register_write_notify_cb = functionPtr;
 }
 
 /**

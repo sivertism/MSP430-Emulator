@@ -1,4 +1,4 @@
-/*
+﻿/*
   MSP430 Emulator					   
   Copyright (C) 2014, 2015 Rudolf Geosits (rgeosits@live.esu.edu)
   
@@ -22,6 +22,7 @@
 uint16_t fetch(Cpu *cpu)
 {
   uint16_t word = read_memory_cb(cpu->pc, WORD);
+  register_read_notify_cb(1);
   cpu->pc += 2;
   return word;
 }
