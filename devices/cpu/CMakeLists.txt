@@ -13,3 +13,7 @@ add_library(cpu
     registers.h
     opcodes.h
     )
+target_compile_options(
+    cpu
+    PRIVATE -Wno-pointer-sign -Wno-strncat-size
+    )
