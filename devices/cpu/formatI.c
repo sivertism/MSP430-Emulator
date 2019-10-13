@@ -613,7 +613,8 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
       source_value = truncate_byte(source_value);
     }
 
-    result = dest_value - (source_value - 1) + get_carry(cpu);
+    //result = dest_value - (source_value - 1) + get_carry(cpu);
+    result = (~source_value) + get_carry(cpu) + dest_value;
 
     if (is_daddr_virtual) {
       write_memory_cb(dest_vaddress, result, bw_flag);
