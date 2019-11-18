@@ -1,19 +1,20 @@
-add_library(cpu
-    decoder.c
-    decoder.h
-    flag_handler.c
-    flag_handler.h
-    formatI.c
-    formatI.h
-    formatII.c
-    formatII.h
-    formatIII.c
-    formatIII.h
-    registers.c
-    registers.h
-    opcodes.h
-    )
+add_library(
+  msp-cpu
+  decoder.c
+  decoder.h
+  flag_handler.c
+  flag_handler.h
+  formatI.c
+  formatI.h
+  formatII.c
+  formatII.h
+  formatIII.c
+  formatIII.h
+  registers.c
+  registers.h
+  opcodes.h
+  )
 target_compile_options(
-    cpu
-    PRIVATE -Wno-pointer-sign -Wno-strncat-size
-    )
+  msp-cpu
+  PRIVATE -Wno-pointer-sign -Wno-strncat-size
+  )

@@ -1,8 +1,8 @@
 add_subdirectory(cpu)
 
-add_library(utilities
+add_library(msp-utilities
     utilities.c
     utilities.h)
 target_compile_options(
-    utilities
+    msp-utilities
     PRIVATE -Wno-pointer-sign)

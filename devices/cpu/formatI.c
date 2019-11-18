@@ -146,7 +146,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     }
 
     if (opcode != OP_MOV) {
-      dest_value = read_memory_cb(dest_vaddress, bw_flag);
+      dest_value = mem_read(dest_vaddress, bw_flag);
     }
 
     is_daddr_virtual = 1;
@@ -171,7 +171,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
       register_read_notify_cb(1);
 
       source_vaddress = virtual_addr;
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       is_saddr_virtual = 1;
 
       sprintf(hex_str_part, "%04X", (uint16_t)source_offset);
@@ -180,7 +180,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     } else if (source == 2) { /* Source Absolute */
       source_offset = fetch(cpu);
       source_vaddress = source_offset;
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       is_saddr_virtual = 1;
 
       sprintf(hex_str_part, "%04X", (uint16_t)source_offset);
@@ -192,7 +192,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
 
       source_vaddress = *s_reg + source_offset;
       register_read_notify_cb(1);
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       is_saddr_virtual = 1;
 
       sprintf(hex_str_part, "%04X", (uint16_t)source_offset);
@@ -237,7 +237,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
       register_read_notify_cb(1);
 
       source_vaddress = virtual_addr;
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       is_saddr_virtual = 1;
 
       sprintf(hex_str_part, "%04X", (uint16_t)source_offset);
@@ -248,7 +248,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
       source_offset = fetch(cpu);
 
       source_vaddress = source_offset;
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       is_saddr_virtual = 1;
 
       sprintf(hex_str_part, "%04X", (uint16_t)source_offset);
@@ -259,7 +259,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
       source_offset = fetch(cpu);
       source_vaddress = *s_reg + source_offset;
       register_read_notify_cb(1);
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       is_saddr_virtual = 1;
 
       sprintf(hex_str_part, "%04X", (uint16_t)source_offset);
@@ -291,7 +291,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
 
     is_daddr_virtual = 1;
     if (opcode != OP_MOV) {
-      dest_value = read_memory_cb(dest_vaddress, bw_flag);
+      dest_value = mem_read(dest_vaddress, bw_flag);
     }
 
     strncat(asm_operands, asm_op2, sizeof asm_op2);
@@ -309,7 +309,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
       is_saddr_virtual = 1;
       source_vaddress = *s_reg;
       register_read_notify_cb(1);
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       sprintf(asm_operands, "@%s, %s", s_reg_name, d_reg_name);
     }
 
@@ -343,7 +343,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     } else { /* Source Indirect */
       is_saddr_virtual = 1;
       source_vaddress = *s_reg;
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
 
       sprintf(asm_operands, "@%s, ", s_reg_name);
     }
@@ -368,7 +368,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
 
     is_daddr_virtual = 1;
     if (opcode != OP_MOV) {
-      dest_value = read_memory_cb(dest_vaddress, bw_flag);
+      dest_value = mem_read(dest_vaddress, bw_flag);
     }
 
     strncat(asm_operands, asm_op2, sizeof asm_op2);
@@ -405,7 +405,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
       is_saddr_virtual = 1;
       source_vaddress = *s_reg;
       register_read_notify_cb(1);
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       if (destination == REG_PC) {
         consume_cycles_cb(1);
         instr->isDestPC = true;
@@ -449,7 +449,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     } else { /* Source Indirect Auto Increment */
       is_saddr_virtual = 1;
       source_vaddress = *s_reg;
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       register_read_notify_cb(1);
 
       sprintf(asm_operands, "@%s+, ", s_reg_name);
@@ -480,7 +480,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
 
     is_daddr_virtual = 1;
     if (opcode != OP_MOV) {
-      dest_value = read_memory_cb(dest_vaddress, bw_flag);
+      dest_value = mem_read(dest_vaddress, bw_flag);
     }
 
     strncat(asm_operands, asm_op2, sizeof asm_op2);
@@ -503,7 +503,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     result = bw_flag ? source_value & 0xFF : source_value;
 
     if (is_daddr_virtual) {
-      write_memory_cb(dest_vaddress, result, bw_flag);
+      mem_write(dest_vaddress, result, bw_flag);
     } else {
       *destination_addr = result;
       register_write_notify_cb(1);
@@ -538,7 +538,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     result = dest_value + source_value;
 
     if (is_daddr_virtual) {
-      write_memory_cb(dest_vaddress, result, bw_flag);
+      mem_write(dest_vaddress, result, bw_flag);
     } else {
       *destination_addr = result;
       register_write_notify_cb(1);
@@ -576,7 +576,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     result = source_value + dest_value + get_carry(cpu);
 
     if (is_daddr_virtual) {
-      write_memory_cb(dest_vaddress, result, bw_flag);
+      mem_write(dest_vaddress, result, bw_flag);
     } else {
       *destination_addr = bw_flag ? result & 0xFF : result;
       register_write_notify_cb(1);
@@ -613,11 +613,11 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
       source_value = truncate_byte(source_value);
     }
 
-    //result = dest_value - (source_value - 1) + get_carry(cpu);
+    // result = dest_value - (source_value - 1) + get_carry(cpu);
     result = (~source_value) + get_carry(cpu) + dest_value;
 
     if (is_daddr_virtual) {
-      write_memory_cb(dest_vaddress, result, bw_flag);
+      mem_write(dest_vaddress, result, bw_flag);
     } else {
       *destination_addr = bw_flag ? result & 0xFF : result;
       register_write_notify_cb(1);
@@ -655,7 +655,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     result = dest_value - source_value;
 
     if (is_daddr_virtual) {
-      write_memory_cb(dest_vaddress, result, bw_flag);
+      mem_write(dest_vaddress, result, bw_flag);
     } else {
       *destination_addr = bw_flag ? result & 0xFF : result;
       register_write_notify_cb(1);
@@ -743,7 +743,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     result = dest_value & ~source_value;
 
     if (is_daddr_virtual) {
-      write_memory_cb(dest_vaddress, result, bw_flag);
+      mem_write(dest_vaddress, result, bw_flag);
     } else {
       *destination_addr = bw_flag ? result & 0xFF : result;
       register_write_notify_cb(1);
@@ -762,7 +762,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     result = dest_value | source_value;
 
     if (is_daddr_virtual) {
-      write_memory_cb(dest_vaddress, result, bw_flag);
+      mem_write(dest_vaddress, result, bw_flag);
     } else {
       *destination_addr = bw_flag ? result & 0xFF : result;
       register_write_notify_cb(1);
@@ -791,7 +791,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     set_sr_flags(cpu, c, z, n, v);
 
     if (is_daddr_virtual) {
-      write_memory_cb(dest_vaddress, result, bw_flag);
+      mem_write(dest_vaddress, result, bw_flag);
     } else {
       *destination_addr = bw_flag ? result & 0xFF : result;
       register_write_notify_cb(1);
@@ -821,7 +821,7 @@ void decode_formatI(Cpu *cpu, uint16_t instruction, char *disas,
     set_sr_flags(cpu, c, z, n, v);
 
     if (is_daddr_virtual) {
-      write_memory_cb(dest_vaddress, result, bw_flag);
+      mem_write(dest_vaddress, result, bw_flag);
     } else {
       *destination_addr = bw_flag ? result & 0xFF : result;
       register_write_notify_cb(1);

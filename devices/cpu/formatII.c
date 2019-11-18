@@ -111,7 +111,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
         // Special case for CALL instruction!
         source_value = source_vaddress;
       } else {
-        source_value = read_memory_cb(source_vaddress, bw_flag);
+        source_value = mem_read(source_vaddress, bw_flag);
       }
 
       is_saddr_virtual = 1;
@@ -126,7 +126,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
         // Special case for CALL instruction!
         source_value = source_vaddress;
       } else {
-        source_value = read_memory_cb(source_vaddress, bw_flag);
+        source_value = mem_read(source_vaddress, bw_flag);
       }
       is_saddr_virtual = 1;
 
@@ -137,7 +137,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
       source_offset = fetch(cpu);
       source_vaddress = *reg + source_offset;
       register_read_notify_cb(1);
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       is_saddr_virtual = 1;
 
       sprintf(hex_str_part, "%04X", (uint16_t)source_offset);
@@ -159,7 +159,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
     } else { /* Source Indirect */
       source_vaddress = *reg;
       register_read_notify_cb(1);
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       is_saddr_virtual = 1;
 
       sprintf(asm_operand, "@%s", reg_name);
@@ -193,7 +193,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
     } else { /* Source Indirect AutoIncrement */
       source_vaddress = *reg;
       register_read_notify_cb(1);
-      source_value = read_memory_cb(source_vaddress, bw_flag);
+      source_value = mem_read(source_vaddress, bw_flag);
       is_saddr_virtual = 1;
 
       sprintf(asm_operand, "@%s+", reg_name);
@@ -235,7 +235,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
     }
 
     if (is_saddr_virtual) { // Write result to memory
-      write_memory_cb(source_vaddress, result, bw_flag);
+      mem_write(source_vaddress, result, bw_flag);
     } else { // Write result to register
       *source_address = bw_flag ? result & 0xFF : result;
       register_write_notify_cb(1);
@@ -266,7 +266,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
     result = (lower << 8) | (upper >> 8);
 
     if (is_saddr_virtual) { // Write result to memory
-      write_memory_cb(source_vaddress, result, WORD);
+      mem_write(source_vaddress, result, WORD);
     } else { // Write result to register
       *source_address = result;
       register_write_notify_cb(1);
@@ -297,7 +297,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
     }
 
     if (is_saddr_virtual) { // Write result to memory
-      write_memory_cb(source_vaddress, result, bw_flag);
+      mem_write(source_vaddress, result, bw_flag);
     } else { // Write result to register
       *source_address = bw_flag ? result & 0xFF : result;
       register_write_notify_cb(1);
@@ -329,7 +329,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
                                        : source_value & 0x00FF;
 
     if (is_saddr_virtual) { // Write result to memory
-      write_memory_cb(source_vaddress, result, WORD);
+      mem_write(source_vaddress, result, WORD);
     } else { // Write result to register
       *source_address = result;
       register_write_notify_cb(1);
@@ -358,7 +358,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
     register_write_notify_cb(1);
 
     // Write result to memory
-    write_memory_cb(cpu->sp, source_value, bw_flag);
+    mem_write(cpu->sp, source_value, bw_flag);
 
     strncpy(instr->mnemonic, "PUSH", sizeof(instr->mnemonic) - 1);
     break;
@@ -375,7 +375,7 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
     cpu->sp -= 2;
     register_write_notify_cb(1);
     consume_cycles_cb(1);
-    write_memory_cb(cpu->sp, cpu->pc, WORD);
+    mem_write(cpu->sp, cpu->pc, WORD);
 
     // Jump
     cpu->pc = source_value;
@@ -388,12 +388,12 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
     //# RETI Return from interrupt: Pop SR then pop PC
   case 0x6: {
     // 1 Pop SR from the stack
-    cpu->sr = read_memory_cb(cpu->sp, WORD);
+    cpu->sr = mem_read(cpu->sp, WORD);
     cpu->sp += 2;
     register_write_notify_cb(2);
 
     // 2 Pop PC from stack
-    cpu->pc = read_memory_cb(cpu->sp, WORD);
+    cpu->pc = mem_read(cpu->sp, WORD);
     cpu->sp += 2;
     instr->isDestPC = true;
     register_write_notify_cb(2);
@@ -445,7 +445,9 @@ void decode_formatII(Cpu *cpu, uint16_t instruction, char *disas,
       strncpy(disas, "RETI", DISAS_STR_LEN);
       break;
     }
-    default: { printf("Unknown Single operand instruction.\n"); }
+    default: {
+      printf("Unknown Single operand instruction.\n");
+    }
 
     } //# End of Switch
 
